@@ -2016,8 +2016,14 @@ def admin_adatok(ora: int = 24) -> dict:
                          "usd": kk["user"].get(f["az"], 0.0),
                          "napi7": [((ma() - timedelta(days=i)).isoformat()[5:], (p.get("napi") or {}).get((ma() - timedelta(days=i)).isoformat(), {}).get("xp", 0)) for i in range(6, -1, -1)]})
     lecke_usd = sum(v for n, v in kk["munka"].items() if n in ("lecke", "lecke_lektor"))
-    kk["lecke_becsles"] = not lecke_usd
-    kk["lecke_ar"] = (lecke_usd or kk["ossz_usd"]) / gen_ossz if gen_ossz else 0.0
+    # „egy lecke ára”: CSAK a címkézés (user/munka mező) kezdete utáni valós adatból; előtte nincs bontás, ezért nem számolunk
+    cimkes = [r["ido"] for r in kolt if r.get("munka")]
+    kezd = min(cimkes) if cimkes else None
+    uj_leckek = sum(1 for x in _jsonl("minoseg.jsonl") if kezd and x.get("ido", "") >= kezd.replace(" ", "T"))
+    lecke_usd2 = sum(float(r.get("usd") or 0) for r in kolt if r.get("munka") in ("lecke", "lecke_lektor"))
+    kk["lecke_ar"] = lecke_usd2 / uj_leckek if uj_leckek else 0.0
+    kk["lecke_minta"] = uj_leckek
+    kk["cimkes_kezdet"] = kezd or ""
     # minőség
     mq = _jsonl("minoseg.jsonl")
     lekt = [x for x in mq if x.get("lektor")]

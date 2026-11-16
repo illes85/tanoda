@@ -223,7 +223,7 @@ def attekintes(D: dict, tok: str) -> str:
         csempe("Kész leckék", str(leckek), f"{gen} elkészített lecke összesen"),
         csempe("AI-költség ma", usd(k["ma_usd"]), f"7 nap: {usd(k['het_usd'])} · összesen {usd(k['ossz_usd'])}"),
         csempe("AI-hívások", str(k["hivas"]), f"átlag {usd(k['ossz_usd'] / max(1, k['hivas']))} / hívás"),
-        csempe("Egy lecke ára", usd(k["lecke_ar"]) if k["lecke_ar"] else "–", "becslés: összes AI-költség / elkészített lecke" if k.get("lecke_becsles") else "generálás + lektor átlaga"),
+        csempe("Egy lecke ára", usd(k["lecke_ar"]) if k["lecke_ar"] else "–", f'valós: {k["lecke_minta"]} lecke alapján (lektorral)' if k["lecke_minta"] else "még nincs elég mért adat"),
         csempe("Nyitott visszajelzés", str(D["vissza"]["nyitott"]), f"kivizsgálandó jelzés: {D['jelzes']['nyitott']}", "fig" if D["vissza"]["nyitott"] + D["jelzes"]["nyitott"] else "ok"),
     ])
     napok = oszlopok([(n[5:], v) for n, v in k["napok"]], " USD", "--s1")
@@ -238,7 +238,7 @@ def attekintes(D: dict, tok: str) -> str:
             f'<div class="kart"><h2>Költség tanulónként</h2>{por}<h3>Mire megy el</h3>{mun}</div></div><div class="kart"><h2>Laptop terhelése</h2>{rend}</div>')
 
 
-MUNKA_NEV = {"lecke": "Lecke-generálás", "lecke_lektor": "Lektor (ellenőrzés)", "terv": "Tanulási terv", "bovit": "Terv bővítése", "anyag": "Anyaggyűjtés", "miniapp": "Mini-alkalmazás", "egyeb": "Egyéb"}
+MUNKA_NEV = {"lecke": "Lecke-generálás", "lecke_lektor": "Lektor (ellenőrzés)", "terv": "Tanulási terv", "bovit": "Terv bővítése", "anyag": "Anyaggyűjtés", "miniapp": "Mini-alkalmazás", "egyeb": "Bontás nélküli (a címkézés előtti hívások)"}
 
 
 def tanulok(D: dict, tok: str) -> str:
@@ -251,7 +251,7 @@ def tanulok(D: dict, tok: str) -> str:
                      f'<td class="n">{keret_s}</td><td class="n">{usd(x["usd"])}</td><td>{e(x["utolso_nap"] or "–")}</td><td>{mini}</td></tr>')
     return ('<div class="kart"><h2>Tanulók</h2><table><tr><th>Tanuló</th><th class="n">Szint</th><th class="n">XP</th><th class="n">Sorozat</th><th class="n">Tanfolyam</th><th class="n">Kész/elkészített lecke</th>'
             '<th class="n">Mai AI-keret</th><th class="n">AI-költség</th><th>Utoljára</th><th>XP / 7 nap</th></tr>' + "".join(sorok) + '</table>'
-            '<p class="kicsi">A mai keret a napi generálási korlát. A költség a naplózás óta gyűlt (korábbi hívásoknál nincs tanuló-bontás).</p></div>')
+            f'<p class="kicsi">A mai keret a napi generálási korlát. A tanulónkénti költség csak a bontás kezdete ({e(D["kolt"]["cimkes_kezdet"][:16] or "még nincs")}) óta mért hívásokat tartalmazza, ezért kisebb lehet az összköltségnél.</p></div>')
 
 
 def minoseg(D: dict, tok: str) -> str:
@@ -293,7 +293,7 @@ def rendszer(D: dict, tok: str, ora: int) -> str:
         csempe("Memória", f'{u["mem"]:.0f}%', f'csúcs {max(mem):.0f}% · swap {u["swap"]:.0f}%', "fig" if max(mem) > 85 else ""),
         csempe("Hőmérséklet", f'{u["temp"]:.0f} °C' if u.get("temp") is not None else "–", f'csúcs {max(tmp):.0f} °C' if tmp else "nincs érzékelő", "fig" if tmp and max(tmp) > 85 else ""),
         csempe("Lemez", f'{u["disk"]:.0f}%', "a /home partíció foglaltsága", "fig" if u["disk"] > 85 else ""),
-        csempe("Akku", f'{u["bat"]}%' if u.get("bat") is not None else "hálózat", ("töltődik" if u.get("toltes") else "") if u.get("bat") is not None else ""),
+        csempe("Akku", f'{u["bat"]}%' if u.get("bat") is not None else "–", ("töltődik" if u.get("toltes") else "nem tölt") if u.get("bat") is not None else "nincs akku-adat"),
         csempe("AI-folyamatok", str(u["claude"]), f'egyszerre legfeljebb {max(r["claude"] for r in mi)}'),
         csempe("Tanoda memóriája", f'{u["rss"]} MB', "a szerver-folyamat"),
     ])
