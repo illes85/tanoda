@@ -1,0 +1,5 @@
+adat/
+.tts/
+.admin_token
+__pycache__/
+*.bak*

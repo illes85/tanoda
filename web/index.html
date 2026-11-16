@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e1a14" media="(prefers-color-scheme:dark)">
+<meta name="theme-color" content="#f2f8f4" media="(prefers-color-scheme:light)">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/ikon.svg">
+<title>Tanoda</title>
+<style>
+:root{--bg:#0e1a14;--kartya:#17281f;--kartya2:#1f3629;--vonal:#2b4a39;--szoveg:#eaf5ee;--halvany:#93b0a0;--zold:#2fd16b;--zold2:#1fa653;--arany:#ffc83d;--piros:#ff5d5d;--kek:#5db8ff;--jo-bg:#143d25;--rossz-bg:#3d1818;--be-bg:#1b4a2e;--ki-bg:#14283a;--vesz-bg:#3a1d1d;--vesz-sz:#ffb0b0;--vesz-v:#5a2a2a;--gomb-sz:#06210f;--arany-sz:#3a2800;--hiba-sz:#ffb0b0;color-scheme:dark}
+@media (prefers-color-scheme:light){:root{--bg:#f2f8f4;--kartya:#ffffff;--kartya2:#e6f1ea;--vonal:#c5d9cc;--szoveg:#14281d;--halvany:#5b7567;--zold:#22b85c;--zold2:#17924a;--arany:#f5b400;--piros:#e0443e;--kek:#1f78c8;--jo-bg:#dcf5e5;--rossz-bg:#fde3e1;--be-bg:#d2f0de;--ki-bg:#dcebfa;--vesz-bg:#fde3e1;--vesz-sz:#a3231e;--vesz-v:#f0b9b5;--hiba-sz:#a3231e;color-scheme:light}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--szoveg);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body{min-height:100vh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+#app{max-width:760px;margin:0 auto;padding:14px 14px 80px}
+h1,h2,h3{margin:.2em 0}
+button{font:inherit;color:inherit;cursor:pointer}
+.gomb{background:var(--zold);color:var(--gomb-sz);border:0;border-bottom:4px solid var(--zold2);border-radius:14px;padding:13px 18px;font-weight:800;width:100%;font-size:1.02rem;letter-spacing:.3px}
+.gomb:active{transform:translateY(2px);border-bottom-width:2px}
+.gomb.masodlagos{background:var(--kartya2);color:var(--szoveg);border-bottom-color:var(--vonal)}
+.gomb.veszely{background:var(--vesz-bg);color:var(--vesz-sz);border-bottom-color:var(--vesz-v)}
+.gomb[disabled]{opacity:.45;pointer-events:none}
+.kartya{background:var(--kartya);border:1px solid var(--vonal);border-radius:18px;padding:14px;margin:12px 0}
+.sor{display:flex;align-items:center;gap:10px}
+.rug{flex:1}
+.halvany{color:var(--halvany);font-size:.9rem}
+.fejlec{position:sticky;top:0;background:linear-gradient(var(--bg) 85%,transparent);padding:8px 0 12px;z-index:5}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--kartya2);border-radius:999px;padding:6px 12px;font-weight:700}
+.sav{height:12px;background:var(--kartya2);border-radius:99px;overflow:hidden}
+.sav>i{display:block;height:100%;background:linear-gradient(90deg,var(--zold),#8bf0b0);border-radius:99px;transition:width .5s}
+.sav.arany>i{background:linear-gradient(90deg,var(--arany),#ffe38a)}
+.gyuru{--p:0;width:54px;height:54px;border-radius:50%;background:conic-gradient(var(--zold) calc(var(--p)*1%),var(--kartya2) 0);display:grid;place-items:center;flex:none}
+.gyuru>b{width:42px;height:42px;border-radius:50%;background:var(--kartya);display:grid;place-items:center;font-size:.8rem}
+input,textarea,select{width:100%;background:var(--kartya2);border:2px solid var(--vonal);border-radius:12px;color:var(--szoveg);padding:12px;font:inherit}
+input:focus,textarea:focus{outline:none;border-color:var(--zold)}
+label{display:block;margin:12px 0 5px;font-weight:700}
+.chipsor{display:flex;flex-wrap:wrap;gap:8px}
+.valaszt{background:var(--kartya2);border:2px solid var(--vonal);border-radius:12px;padding:9px 14px;font-weight:700}
+.valaszt.be{border-color:var(--zold);background:var(--be-bg)}
+.modul{margin:14px 0 6px;font-weight:800}
+.lecke{display:flex;gap:10px;align-items:center;padding:10px;border-radius:12px;background:var(--kartya);margin:6px 0;border:1px solid var(--vonal)}
+.lecke.kesz{opacity:.7}.lecke.mai{border-color:var(--zold);box-shadow:0 0 0 2px color-mix(in srgb,var(--zold) 25%,transparent)}
+.pont{width:28px;height:28px;border-radius:50%;background:var(--kartya2);display:grid;place-items:center;flex:none;font-size:.85rem}
+.lecke.kesz .pont{background:var(--zold);color:var(--gomb-sz)}
+.fulek{display:flex;gap:6px;margin:10px 0}
+.ful{flex:1;padding:10px;border-radius:12px;background:var(--kartya);border:1px solid var(--vonal);text-align:center;font-weight:700}
+.ful.be{background:var(--kartya2);border-color:var(--zold)}
+a{color:var(--kek)}
+.md em{font-style:normal;font-weight:700;color:var(--kek);background:color-mix(in srgb,var(--kek) 12%,transparent);padding:0 5px;border-radius:6px}
+.md p{margin:.5em 0}.md ul{margin:.4em 0 .4em 1.1em;padding:0}
+/* lecke-lejátszó */
+#lj{position:fixed;inset:0;background:var(--bg);z-index:20;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+#lj .tet{display:flex;align-items:center;gap:12px;padding:12px 14px}
+#lj .tet .sav{flex:1}
+#lj .x{background:none;border:0;font-size:1.5rem;color:var(--halvany)}
+#lj .test{flex:1;overflow:auto;padding:6px 16px 16px;max-width:760px;width:100%;margin:0 auto}
+#lj .lab{padding:12px 16px 16px;max-width:760px;width:100%;margin:0 auto}
+.kerdes{font-size:1.25rem;font-weight:800;margin:10px 0 16px}
+.opcio{display:block;width:100%;text-align:left;background:var(--kartya);border:2px solid var(--vonal);border-bottom-width:4px;border-radius:14px;padding:13px 14px;margin:9px 0;font-weight:600}
+.opcio.jo{border-color:var(--zold);background:var(--jo-bg)}.opcio.rossz{border-color:var(--piros);background:var(--rossz-bg)}
+.vissza{border-radius:16px;padding:14px;margin-top:14px;font-weight:600}
+.vissza.jo{background:var(--jo-bg);border:1px solid var(--zold)}.vissza.rossz{background:var(--rossz-bg);border:1px solid var(--piros)}
+.flip{background:var(--kartya);border:2px solid var(--vonal);border-radius:20px;min-height:170px;display:grid;place-items:center;padding:20px;text-align:center;font-size:1.35rem;font-weight:800}
+.pardoboz{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.par{background:var(--kartya);border:2px solid var(--vonal);border-bottom-width:4px;border-radius:12px;padding:12px;text-align:center;font-weight:600}
+.par.ki{border-color:var(--kek);background:var(--ki-bg)}.par.kesz{visibility:hidden}.par.hiba{animation:remeg .35s;border-color:var(--piros)}
+.szo{display:inline-block;background:var(--kartya);border:2px solid var(--vonal);border-bottom-width:4px;border-radius:10px;padding:8px 12px;margin:4px;font-weight:700}
+.szohely{min-height:56px;border-bottom:2px dashed var(--vonal);margin-bottom:12px;padding:4px 0}
+.hang{width:84px;height:84px;border-radius:50%;background:var(--kek);color:#fff;border:0;font-size:2rem;display:block;margin:10px auto 18px;border-bottom:5px solid rgba(0,0,0,.25)}
+.kombo{position:fixed;right:14px;top:70px;background:var(--arany);color:var(--arany-sz);font-weight:900;border-radius:99px;padding:5px 12px;animation:pop .3s}
+@keyframes remeg{25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+@keyframes pop{0%{transform:scale(.4)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+@keyframes lebeg{50%{transform:translateY(-6px)}}
+.nagy{font-size:4rem;text-align:center;animation:lebeg 1.6s infinite}
+#app>div,#app>h2,#app>label{}
+.kozep{text-align:center}
+.kituzo{display:inline-grid;place-items:center;width:78px;margin:6px;text-align:center;font-size:.72rem}
+.kituzo b{font-size:2rem;display:block}.kituzo.nincs{filter:grayscale(1);opacity:.35}
+#konfetti{position:fixed;inset:0;pointer-events:none;z-index:40}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--kartya2);border:1px solid var(--zold);padding:10px 16px;border-radius:14px;z-index:50;max-width:90%}
+
+/* ---------- animációk, kabala ---------- */
+.csira .szem,.csira .level,.csira .szaj-ny,.csira .test2{transform-box:fill-box}
+@keyframes belep{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes pop2{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+@keyframes ugras{0%{transform:translateY(0) scale(1,1)}15%{transform:translateY(0) scale(1.12,.86)}45%{transform:translateY(-26px) scale(.92,1.1)}75%{transform:translateY(0) scale(1.1,.88)}100%{transform:none}}
+@keyframes lebeg2{50%{transform:translateY(-4px)}}
+@keyframes remeg2{20%{transform:translateX(-5px) rotate(-3deg)}50%{transform:translateX(5px) rotate(3deg)}80%{transform:translateX(-3px)}}
+@keyframes lengo{50%{transform:rotate(6deg)}}
+@keyframes pislog{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes szaj{50%{transform:scaleY(1.7)}}
+@keyframes lang{0%,100%{transform:scale(1) rotate(-3deg)}50%{transform:scale(1.18) rotate(4deg)}}
+@keyframes csillog{to{background-position:-60px 0}}
+@keyframes repul{0%{transform:translate(0,0) scale(.4);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1.1) rotate(var(--r));opacity:0}}
+@keyframes zz{0%{transform:translate(0,0);opacity:0}30%{opacity:1}100%{transform:translate(10px,-22px);opacity:0}}
+@keyframes jopuls{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--zold) 60%,transparent)}100%{box-shadow:0 0 0 14px transparent}}
+@keyframes forog{from{transform:rotate(-15deg) scale(.3)}to{transform:none}}
+.be-anim>*{animation:belep .38s both}.be-anim>*:nth-child(2){animation-delay:.05s}.be-anim>*:nth-child(3){animation-delay:.1s}.be-anim>*:nth-child(4){animation-delay:.15s}.be-anim>*:nth-child(n+5){animation-delay:.2s}
+.kartya{animation:pop2 .4s both}
+#app .kartya:nth-of-type(2){animation-delay:.06s}#app .kartya:nth-of-type(3){animation-delay:.12s}
+.sav>i{background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.22) 0 10px,transparent 10px 20px);background-size:60px 60px;animation:csillog 1.4s linear infinite}
+.opcio,.par,.szo,.valaszt,.lecke{transition:transform .12s,border-color .15s,background .15s}
+.opcio:active,.par:active,.szo:active{transform:scale(.97)}
+.opcio.jo{animation:jopuls .6s,ugras .5s}.opcio.rossz{animation:remeg2 .4s}
+.vissza{animation:pop2 .35s both}
+.lang{display:inline-block;animation:lang 1.6s ease-in-out infinite;transform-origin:50% 80%}
+.kituzo b{display:block;animation:forog .6s both}
+.gomb{position:relative;overflow:hidden}
+.gomb::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 40%,rgba(255,255,255,.35) 50%,transparent 60%);transform:translateX(-120%);transition:none}
+.gomb:hover::after{transform:translateX(120%);transition:transform .6s}
+.csirasor{display:flex;align-items:center;gap:10px;padding:0 16px;max-width:760px;width:100%;margin:0 auto}
+.csira{width:108px;height:108px;flex:none;position:relative}
+.csira.nagy2{width:210px;height:210px;margin:0 auto}
+.csira svg{width:100%;height:100%;overflow:visible;visibility:hidden}
+html.k3d-nincs .csira svg{visibility:visible}   /* a csíra csak akkor látszik, ha a 3D kabala nem indul – betöltéskor ne villanjon fel */
+.csira .test2{transform-origin:50% 90%;animation:lebeg2 3s ease-in-out infinite}
+.csira .level{transform-origin:50% 100%;animation:lengo 3.4s ease-in-out infinite}
+.csira .szem{transform-origin:50% 50%;animation:pislog 4.5s infinite}
+.csira .szem-orul,.csira .szem-szomoru,.csira .szem-alszik,.csira .szaj-ny,.csira .szaj-szomoru,.csira .szaj-orul,.csira .zzz,.csira .gondol{display:none}
+.csira[data-a=orul] .test2{animation:ugras .7s}
+.csira[data-a=orul] .szem,.csira[data-a=szomoru] .szem,.csira[data-a=alszik] .szem{display:none}
+.csira[data-a=orul] .szem-orul,.csira[data-a=orul] .szaj-orul{display:inline}
+.csira[data-a=orul] .szaj{display:none}
+.csira[data-a=szomoru] .test2{animation:remeg2 .5s}
+.csira[data-a=szomoru] .szem-szomoru,.csira[data-a=szomoru] .szaj-szomoru{display:inline}
+.csira[data-a=szomoru] .szaj{display:none}
+.csira[data-a=beszel] .szaj{display:none}.csira[data-a=beszel] .szaj-ny{display:inline;transform-origin:50% 50%;animation:szaj .28s infinite}
+.csira[data-a=alszik] .szem-alszik,.csira[data-a=alszik] .zzz{display:inline}.csira[data-a=alszik] .zzz{animation:zz 2.2s infinite}
+.csira[data-a=gondol] .gondol{display:inline;animation:zz 1.6s infinite}
+.buborek{background:var(--kartya);border:2px solid var(--vonal);border-radius:16px;border-bottom-left-radius:4px;padding:8px 12px;font-weight:700;font-size:.95rem;animation:pop2 .3s both;min-height:38px}
+.szikra{position:fixed;z-index:60;pointer-events:none;font-size:1.3rem;animation:repul .8s ease-out forwards}
+.hangvezer{display:flex;gap:8px;margin-top:14px}
+.hangvezer .gomb{padding:10px 14px;font-size:.95rem}
+.lap{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:70;display:grid;place-items:end center;animation:belep .2s both}
+.lap>div{background:var(--bg);border:1px solid var(--vonal);border-radius:22px 22px 0 0;width:100%;max-width:760px;padding:16px 16px 28px;max-height:85vh;overflow:auto}
+.tanfolyamok{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 2px 10px;margin:0 -14px;padding-left:14px;padding-right:14px;scrollbar-width:thin}
+.tanfolyamok>.tk{flex:0 0 84%;scroll-snap-align:center;margin:0}
+.tk{border-top:5px solid var(--ac,var(--zold));display:flex;flex-direction:column;gap:8px}
+.tk .gyuru{background:conic-gradient(var(--ac) calc(var(--p)*1%),var(--kartya2) 0)}
+.tk .gomb.ac{background:var(--ac);border-bottom-color:color-mix(in srgb,var(--ac) 60%,#000);margin-top:auto}
+.ujkartya{border-style:dashed;border-top-style:dashed;align-items:center;justify-content:center;text-align:center;min-height:170px;opacity:.85}
+.hetcsik{display:flex;gap:5px}.hp{flex:1;text-align:center;font-size:.72rem;font-weight:800;border-radius:8px;padding:3px 0;background:var(--kartya2);color:var(--halvany)}
+.hp.t{outline:2px dashed var(--ac);outline-offset:-2px;color:var(--szoveg)}.hp.k{background:var(--ac);color:#06210f}.hp.m{box-shadow:0 0 0 2px var(--szoveg)}
+@media(min-width:700px){#app.szeles{max-width:1100px}.tanfolyamok{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));overflow:visible;margin:0;padding:4px 0}.tanfolyamok>.tk{flex:none}}
+@keyframes rec{0%,100%{box-shadow:0 0 0 0 rgba(255,93,93,.6)}50%{box-shadow:0 0 0 16px rgba(255,93,93,0)}}
+.hang.rec{animation:rec 1s infinite}
+.szo.ures{background:transparent;border-style:dashed;border-color:var(--vonal);color:transparent;box-shadow:none;cursor:default}
+.szo.ujszo{animation:pop2 .22s both}
+/* ---------- szemléltető ábrák ---------- */
+@keyframes nov{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes kor{from{transform:rotate(0)}to{transform:rotate(var(--a))}}
+.abra{background:var(--kartya);border:1px solid var(--vonal);border-radius:16px;padding:10px;margin:12px 0;animation:pop2 .4s both}
+.abracim{font-weight:800;margin:0 2px 8px;font-size:.95rem}
+.abra svg{width:100%;height:auto;display:block;border-radius:12px}
+.abra .jel{animation:pop2 .5s both;animation-delay:calc(var(--i)*.13s);transform-box:fill-box;transform-origin:center;cursor:pointer}
+.abra .jel .em{animation:lebeg2 3.2s ease-in-out infinite;animation-delay:calc(var(--i)*.45s);transform-box:fill-box;transform-origin:center}
+.abra .jel:active{transform:scale(1.18)}
+.abra .oszlop{transform-box:fill-box;transform-origin:bottom;animation:nov .7s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:calc(var(--i)*.09s)}
+.abra .szelet{animation:pop2 .6s both;animation-delay:calc(var(--i)*.1s);transform-box:fill-box;transform-origin:center}
+.abra .csomo{animation:pop2 .5s both;animation-delay:calc(var(--i)*.1s + .2s);transform-box:fill-box;transform-origin:center}
+.abra .mutato{transform-origin:50px 50px;animation:kor 1.4s cubic-bezier(.3,1.3,.5,1) both;transform:rotate(var(--a))}
+.fl{display:flex;flex-direction:column;align-items:stretch;gap:4px}
+.fl-lep{display:flex;align-items:center;gap:10px;background:var(--kartya2);border-radius:14px;padding:9px 12px;font-weight:600;animation:pop2 .45s both;animation-delay:calc(var(--i)*.15s)}
+.fl-ikon{font-size:1.5rem;flex:none;width:2.1rem;text-align:center}
+.fl-nyil{text-align:center;color:var(--zold);font-weight:900;line-height:1;animation:pop2 .4s both;animation-delay:calc(var(--i)*.15s + .1s)}
+.iv{position:relative;padding-left:26px}
+.iv::before{content:"";position:absolute;left:9px;top:6px;bottom:6px;width:3px;border-radius:3px;background:linear-gradient(var(--zold),var(--kek))}
+.iv-p{position:relative;margin:0 0 10px;animation:pop2 .45s both;animation-delay:calc(var(--i)*.14s)}
+.iv-p::before{content:"";position:absolute;left:-23px;top:4px;width:13px;height:13px;border-radius:50%;background:var(--kartya);border:3px solid var(--zold)}
+.iv-p b{display:block}.iv-p .ik{margin-right:4px}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:8px;position:relative}
+.vs>div{background:var(--kartya2);border-radius:14px;padding:10px;animation:pop2 .45s both}
+.vs>div:nth-child(2){animation-delay:.12s}
+.vs h4{margin:0 0 6px;padding:4px 8px;border-radius:9px;color:var(--gomb-sz);font-size:.9rem;text-align:center}
+.vs ul{margin:0;padding-left:1.1em;font-size:.92rem}
+.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:.92rem;overflow:hidden;border-radius:12px;border:1px solid var(--vonal)}
+.tbl th{background:var(--zold);color:var(--gomb-sz);padding:7px 8px;text-align:left}
+.tbl td{padding:7px 8px;border-top:1px solid var(--vonal)}.tbl tr:nth-child(even) td{background:var(--kartya2)}
+.legenda{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:8px;font-size:.85rem}
+.legenda i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.tippabra{font-size:.82rem;color:var(--halvany);margin:-4px 2px 6px}
+.par.tipp{border-color:var(--arany);animation:jopuls .7s 3;background:color-mix(in srgb,var(--arany) 18%,var(--kartya))}
+.profilok{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin:16px 0}
+.profil{background:var(--kartya);border:2px solid var(--vonal);border-bottom-width:4px;border-radius:16px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:700;animation:pop2 .4s both}
+.profil .pe{font-size:2.3rem}.profil:active{transform:translateY(2px)}
+.miniappablak{position:fixed;inset:0;z-index:80;background:var(--bg);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+.miniapptet{display:flex;align-items:center;gap:10px;padding:10px 14px}
+.miniappablak iframe{flex:1;border:0;width:100%;background:#fff}
+.tablabe{max-width:420px;margin:0 auto}.tablabe .sakk{width:100%;height:auto;display:block;border-radius:10px;color:var(--szoveg)}
+.sakk text{font-family:"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans","Apple Symbols",sans-serif;paint-order:stroke}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<canvas id="konfetti"></canvas>
+<script>
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const md=t=>{let h=esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/`(.+?)`/g,"<code>$1</code>").replace(/\*([^*\n]+?)\*/g,"<em>$1</em>");
+  const sorok=h.split(/\n/);let o="",lista=false;
+  for(const s of sorok){if(/^\s*[-•*]\s+/.test(s)){if(!lista){o+="<ul>";lista=true}o+="<li>"+s.replace(/^\s*[-•*]\s+/,"")+"</li>"}else{if(lista){o+="</ul>";lista=false}if(s.trim())o+="<p>"+s+"</p>"}}
+  return o+(lista?"</ul>":"")};
+const api=async(u,b)=>{const r=await fetch(u,b===undefined?{}:{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});
+  const j=await r.json().catch(()=>({hiba:"Hálózati hiba"}));if(r.status===401){j._401=true;belepes()}else if(!r.ok&&!j.hiba)j.hiba="Hiba ("+r.status+")";return j};
+let A=null;
+const Be=Object.assign({kabala:"dino",sfx:true,auto:true,nemit:false,motor:"auto",seb:1,huHang:"anna",enHang:"lessac",bHu:"",bEn:"",emlekezteto:{be:false,ido:"18:00"}},JSON.parse(localStorage.tanoda_be||"{}"));
+document.documentElement.dataset.kabala=Be.kabala==="lapi"?"lapi":"dino";
+const KNEV=()=>Be.kabala==="lapi"?"Lapi":"Rexi";
+const mentBe=()=>{localStorage.tanoda_be=JSON.stringify(Be);fetch("/api/beallitas",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(Be)}).catch(()=>{})};
+/* ---------- hanghatások (szintetizált, nincs hangfájl) ---------- */
+const sfx=(()=>{let ac=null;
+  const ctx=()=>{if(!Be.sfx)return null;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==="suspended")ac.resume();return ac}catch(e){return null}};
+  const N=n=>261.63*Math.pow(2,n/12);
+  const ton=(f,d,o={})=>{const c=ctx();if(!c)return;const {tip="sine",v=.14,t=0,f2=null,lp=null}=o,x=c.createOscillator(),g=c.createGain(),s=c.currentTime+t;
+    x.type=tip;x.frequency.setValueAtTime(f,s);if(f2)x.frequency.exponentialRampToValueAtTime(f2,s+d);
+    g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(v,s+.012);g.gain.exponentialRampToValueAtTime(.0001,s+d);
+    let n=x;if(lp){const q=c.createBiquadFilter();q.type="lowpass";q.frequency.value=lp;x.connect(q);n=q}n.connect(g);g.connect(c.destination);x.start(s);x.stop(s+d+.05)};
+  return {tap:()=>ton(900,.05,{v:.04,tip:"triangle"}),
+    jo:()=>{ton(N(7),.12,{tip:"triangle"});ton(N(12),.2,{tip:"triangle",t:.09});ton(N(19),.28,{v:.05,t:.17})},
+    rossz:()=>ton(230,.32,{tip:"sawtooth",v:.08,f2:130,lp:700}),
+    par:()=>ton(520,.1,{f2:1040,v:.11}),flip:()=>ton(300,.12,{f2:720,tip:"triangle",v:.1}),
+    lapoz:()=>ton(380,.1,{f2:560,v:.06,tip:"triangle"}),
+    kombo:n=>{for(let i=0;i<Math.min(4,n-1);i++)ton(N(12+i*2),.1,{tip:"square",v:.04,t:i*.06})},
+    kezdes:()=>{ton(200,.35,{f2:900,v:.07});ton(N(12),.22,{tip:"triangle",t:.3})},
+    szint:()=>[0,4,7,12,16,19,24].forEach((n,i)=>ton(N(n),.3,{tip:"triangle",t:i*.1,v:.12})),
+    kituzo:()=>{ton(N(19),.6,{v:.12});ton(N(19)*2,.5,{v:.05});ton(N(24),.7,{t:.15,v:.1})},
+    vege:()=>[0,4,7,12].forEach((n,i)=>ton(N(n),.26,{tip:"triangle",t:i*.12,v:.14}))}})();
+const joHang=()=>sfx.jo(),rosszHang=()=>sfx.rossz(),gyozelem=()=>sfx.vege();
+document.addEventListener("pointerdown",e=>{if(e.target.closest("button,.opcio,.par,.szo,.kartya[onclick]"))sfx.tap()});
+const rez=ms=>navigator.vibrate&&navigator.vibrate(ms);
+/* ---------- Lapi, a 3D kabala (SVG-tartalék, ha nincs WebGL) ---------- */
+const CSIRA=(k="",a="idle")=>`<div class="csira ${k}" data-a="${a}"><svg viewBox="0 0 100 100"><ellipse cx="50" cy="94" rx="26" ry="5" fill="rgba(0,0,0,.18)"/>
+<g class="test2"><g class="level"><path d="M50 28C46 10 32 6 24 10C26 22 36 29 50 28Z" fill="#37d66f"/><path d="M50 28C54 8 70 4 78 9C76 22 64 29 50 28Z" fill="#22b85c"/><path d="M50 30L50 20" stroke="#168a45" stroke-width="3" stroke-linecap="round"/></g>
+<ellipse cx="50" cy="62" rx="33" ry="30" fill="#4be08a"/><ellipse cx="50" cy="71" rx="22" ry="17" fill="#b4f7cd" opacity=".7"/>
+<ellipse cx="31" cy="68" rx="6" ry="4" fill="#ff9fb8" opacity=".8"/><ellipse cx="69" cy="68" rx="6" ry="4" fill="#ff9fb8" opacity=".8"/>
+<g class="szem"><ellipse cx="38" cy="56" rx="6" ry="7.5" fill="#12301f"/><ellipse cx="62" cy="56" rx="6" ry="7.5" fill="#12301f"/><circle cx="40" cy="53" r="2.4" fill="#fff"/><circle cx="64" cy="53" r="2.4" fill="#fff"/></g>
+<g class="szem-orul" fill="none" stroke="#12301f" stroke-width="3.5" stroke-linecap="round"><path d="M32 58Q38 49 44 58"/><path d="M56 58Q62 49 68 58"/></g>
+<g class="szem-szomoru"><ellipse cx="38" cy="59" rx="5.5" ry="6" fill="#12301f"/><ellipse cx="62" cy="59" rx="5.5" ry="6" fill="#12301f"/><circle cx="39.5" cy="57" r="2" fill="#fff"/><circle cx="63.5" cy="57" r="2" fill="#fff"/><path d="M30 51L44 46M70 51L56 46" stroke="#12301f" stroke-width="3" stroke-linecap="round"/></g>
+<g class="szem-alszik" fill="none" stroke="#12301f" stroke-width="3.5" stroke-linecap="round"><path d="M32 58Q38 63 44 58"/><path d="M56 58Q62 63 68 58"/></g>
+<path class="szaj" d="M43 71Q50 78 57 71" fill="none" stroke="#12301f" stroke-width="3.2" stroke-linecap="round"/>
+<path class="szaj-orul" d="M40 69Q50 84 60 69Z" fill="#12301f"/><ellipse class="szaj-ny" cx="50" cy="73" rx="6" ry="4" fill="#12301f"/>
+<path class="szaj-szomoru" d="M43 77Q50 70 57 77" fill="none" stroke="#12301f" stroke-width="3.2" stroke-linecap="round"/>
+<text class="zzz" x="70" y="38" font-size="16" fill="#93b0a0" font-weight="800">z</text><text class="gondol" x="70" y="34" font-size="16" fill="#93b0a0" font-weight="800">…</text></g></svg></div>`;
+function csiraA(allapot,ms=0){document.querySelectorAll(".csira").forEach(e=>{e.dataset.a="idle";void e.offsetWidth;e.dataset.a=allapot;e.dataset.n=String(performance.now())});
+  if(ms)setTimeout(()=>document.querySelectorAll(".csira").forEach(e=>{if(e.dataset.a===allapot)e.dataset.a=Felolv.beszel?"beszel":"idle"}),ms)}
+/* A kabala gesztusai a tanulás mozzanataihoz: több változat közül sorsol, a szintre/sorozatra/nehézségre is figyel */
+const KAB_ESEMENY={
+  koszon:[["integet",2200],["integet",2200],["nyujtozik",2200]],
+  lecke_indul:[["integet",1800],["bator",1600]],
+  helyes:[["orul",900],["bolint",900],["tapsol",1100]],
+  sorozat3:[["tapsol",1300],["bator",1400],["orul",1000]],
+  sorozat5:[["tancol",1800],["edz",1600]],
+  sorozat8:[["forog",1700],["tancol",2000]],
+  hibas:[["szomoru",900],["razza",1100]],
+  hibas2:[["bator",1500],["tanit",1500]],
+  nehez:[["edz",1500],["csodalkozik",1200]],
+  gyors:[["fut",1400]],
+  kesz_jo:[["tancol",2600],["forog",1800]],
+  kesz_tokeletes:[["forog",1800],["tancol",3000]],
+  uj_szint:[["forog",1900],["szalutal",2200]],
+  kituzo:[["csodalkozik",1500],["szalutal",2000]],
+  sorozat_nap:[["szalutal",2200],["edz",1800]],
+};
+function kabala(esemeny){const l=KAB_ESEMENY[esemeny];if(!l)return;const [a,ms]=l[Math.random()*l.length|0];csiraA(a,ms)}
+function buborek(t){const b=$("#bub");if(b){b.textContent=t;b.style.animation="none";void b.offsetWidth;b.style.animation=""}}
+const veletlen=l=>l[Math.random()*l.length|0];
+function szikra(x,y,n=10,jelek=["✨","⭐","💚","🌟"]){for(let i=0;i<n;i++){const e=document.createElement("span");e.className="szikra";e.textContent=veletlen(jelek);const a=Math.random()*6.28,r=40+Math.random()*70;
+  e.style.cssText=`left:${x}px;top:${y}px;--dx:${Math.cos(a)*r}px;--dy:${Math.sin(a)*r-30}px;--r:${(Math.random()*180-90)|0}deg`;document.body.appendChild(e);setTimeout(()=>e.remove(),900)}}
+const szikraEl=(el,n)=>{if(!el)return;const r=el.getBoundingClientRect();szikra(r.left+r.width/2,r.top+r.height/2,n)};
+/* ---------- felolvasás: böngésző természetes hangja, különben a Tanoda saját (Anna) hangja ---------- */
+const NYELV_BCP={en:"en-US",de:"de-DE",fr:"fr-FR",es:"es-ES",it:"it-IT",pt:"pt-PT",nl:"nl-NL",pl:"pl-PL",ru:"ru-RU",uk:"uk-UA",cs:"cs-CZ",sk:"sk-SK",ro:"ro-RO",sv:"sv-SE",no:"nb-NO",da:"da-DK",fi:"fi-FI",tr:"tr-TR",el:"el-GR",ar:"ar-SA",zh:"zh-CN",ja:"ja-JP",ko:"ko-KR",hi:"hi-IN",ca:"ca-ES"};
+const vhang=l=>l==="en"?Be.enHang:l==="hu"?Be.huHang:"";
+const Felolv={gen:0,aud:null,beszel:false,
+  hangok(){try{return speechSynthesis.getVoices()||[]}catch(e){return[]}},
+  bhang(l){const v=this.hangok().filter(x=>x.lang.toLowerCase().replace("_","-").startsWith(l)),v0=v.find(x=>x.name===(l==="en"?Be.bEn:l==="hu"?Be.bHu:"~"));if(v0)return v0;return v.find(x=>/natural|online|neural/i.test(x.name))||v.find(x=>/google|premium|enhanced/i.test(x.name))||v[0]||null},
+  motor(){if(Be.motor==="szerver")return"s";const h=this.bhang("hu");if(Be.motor==="bongeszo")return h?"b":"s";return h&&/natural|online|neural|google|premium|enhanced/i.test(h.name)?"b":"s"},
+  stop(){this.gen++;if(this.aud){this.aud.pause();this.aud=null}try{speechSynthesis.cancel()}catch(e){}this.beszel=false;csiraA("idle")},
+  async mond(szegs,motor){this.stop();const g=this.gen,m=motor||this.motor();this.beszel=true;csiraA("beszel");
+    for(let i=0;i<szegs.length&&g===this.gen;i++){const sz=szegs[i];
+      if(m==="s"&&szegs[i+1])fetch(`/api/tts?h=${szegs[i+1].l}&v=${vhang(szegs[i+1].l)}&t=${encodeURIComponent(szegs[i+1].t)}`).catch(()=>{});
+      const ok=await (m==="b"?this.b(sz,g):this.s(sz,g));if(ok===false){const v=this.vege;this.stop();v&&v();toast("A böngésző nem engedte a hangot – koppints a 🔊 gombra.");return}}
+    if(g===this.gen){this.beszel=false;csiraA("idle");Felolv.vege&&Felolv.vege()}},
+  s(sz,g){return new Promise(res=>{const a=new Audio(`/api/tts?h=${sz.l}&v=${vhang(sz.l)}&t=${encodeURIComponent(sz.t)}`);a.playbackRate=Be.seb;this.aud=a;a.onended=()=>res(true);a.onerror=()=>{if(g!==this.gen)return res(true);this.b(sz,g).then(res)};
+    a.play().catch(()=>res(false))})},
+  b(sz,g){return new Promise(res=>{const u=new SpeechSynthesisUtterance(sz.t),h=this.bhang(sz.l);u.lang=sz.l==="hu"?"hu-HU":(NYELV_BCP[sz.l]||sz.l);if(h)u.voice=h;u.rate=Be.seb;u.pitch=1.05;
+    u.onend=()=>res(true);u.onerror=()=>res(true);speechSynthesis.speak(u)})}};
+try{speechSynthesis.onvoiceschanged=()=>{}}catch(e){}
+const ech=(v,fel)=>`<button class="valaszt ${Be.emlekezteto.be===v?"be":""}" onclick="Be.emlekezteto.be=${v};Be.emlekezteto.ido=document.getElementById('eido').value||Be.emlekezteto.ido;mentBe();this.parentNode.querySelectorAll('.valaszt').forEach(x=>x.classList.remove('be'));this.classList.add('be')">${fel}</button>`;
+async function emlProba(b){b.disabled=true;const r=await api("/api/emlekezteto/proba",{});b.disabled=false;toast(r.ok?"Elküldtem – nézd meg a telefonod!":"Nem sikerült: "+(r.hiba||"ismeretlen hiba"))}
+async function belepes(){document.querySelector("#lj")?.remove();try{Felolv.stop()}catch(e){}
+  const r=await fetch("/api/profilok").then(x=>x.json()).catch(()=>({profilok:[]}));
+  const app=$("#app");app.classList.remove("szeles");
+  app.innerHTML=`<div class="kozep" style="margin-top:18px">${CSIRA("nagy2")}<h2>Ki tanul?</h2><p class="halvany">Válassz profilt, vagy hozz létre újat – mindenkinek külön a haladása és a tanfolyamai.</p></div>
+   <div class="profilok">${(r.profilok||[]).map(p=>`<button class="profil" onclick="profilValaszt('${esc(p.az)}',${p.pin})"><span class="pe">${esc(p.emoji)}</span><b>${esc(p.nev)}</b>${p.pin?'<span class="halvany">🔒</span>':""}</button>`).join("")}
+   <button class="profil" onclick="ujProfil()"><span class="pe">＋</span><b>Új profil</b></button></div>`}
+document.addEventListener("input",e=>{const i=e.target;if(i.tagName==="INPUT"&&(i.inputMode==="numeric"||i.type==="number")){const v=szam0(i.value);if(v!==i.value&&/^\d+$/.test(i.value))i.value=v}});
+const szam0=s=>/^\d+$/.test(s)?(s.replace(/^0+(?=\d)/,"")):s;
+async function profilValaszt(az,pin){let p="";if(pin){p=prompt("A profil PIN-kódja:");if(p===null)return;p=szam0(p.trim())}
+  const r=await api("/api/belep",{az,pin:p});if(r.ok)location.reload();else toast(r.hiba||"Nem sikerült a belépés")}
+function ujProfil(){window._pe="🧑";const EM=["🧑","👩","👨","🧒","👧","👦","🧓","🦊","🐼","🐯","🦉","🐸","🚀","🌟","🎸","📚"];
+  $("#app").innerHTML=`<button class="chip" style="border:0" onclick="belepes()">← Vissza</button><h2>Új profil</h2>
+   <label>Hogy hívjanak?</label><input id="pf_nev" maxlength="24" placeholder="pl. Anna" autocomplete="off">
+   <label>Válassz egy jelet</label><div class="chipsor">${EM.map(e=>`<button class="valaszt ${e==="🧑"?"be":""}" onclick="window._pe='${e}';[...this.parentNode.children].forEach(x=>x.classList.toggle('be',x===this))">${e}</button>`).join("")}</div>
+   <label>PIN-kód <span class="halvany">(opcionális, 4–8 számjegy – ha mások nem nézhetik a haladásodat)</span></label><input id="pf_pin" type="password" inputmode="numeric" maxlength="8" autocomplete="off">
+   <div style="height:16px"></div><button class="gomb" onclick="profilLetrehoz()">Kezdjünk! 🚀</button>`;setTimeout(()=>$("#pf_nev").focus(),50)}
+async function profilLetrehoz(){const r=await api("/api/belep",{nev:$("#pf_nev").value.trim(),emoji:window._pe,pin:szam0($("#pf_pin").value.trim())});if(r.ok)location.reload();else toast(r.hiba||"Nem sikerült")}
+async function profilValtas(){await api("/api/kilep",{});location.reload()}
+async function pinBeallit(){const f=A.felhasznalo;let regi="";if(f.pin){regi=prompt("Jelenlegi PIN:");if(regi===null)return;regi=szam0(regi.trim())}
+  let uj=prompt("Új PIN (4–8 számjegy; üresen hagyva törlöd a PIN-t):");if(uj===null)return;uj=szam0(uj.trim());
+  const r=await api("/api/pin",{regi,uj});toast(r.ok?(uj?"PIN mentve":"PIN törölve"):(r.hiba||"Nem sikerült"));if(r.ok){A=await api("/api/allapot")}}
+const kch=(v,fel)=>`<button class="valaszt ${Be.kabala===v?"be":""}" onclick="Be.kabala='${v}';document.documentElement.dataset.kabala='${v}';mentBe();this.parentNode.querySelectorAll('.valaszt').forEach(x=>x.classList.remove('be'));this.classList.add('be');csiraA('orul',1200)">${fel}</button>`;
+const MINTA={hu:"Szia! Így hangzom, amikor felolvasom a leckéidet.",en:"Hello! This is how I sound when I read your lessons."};
+const vch=(k,v,fel)=>`<button class="valaszt ${Be[k]===v?"be":""}" onclick="Be.${k}='${v}';mentBe();this.parentNode.querySelectorAll('.valaszt').forEach(x=>x.classList.remove('be'));this.classList.add('be');Felolv.mond([{t:MINTA['${k==="huHang"?"hu":"en"}'],l:'${k==="huHang"?"hu":"en"}'}],'s')">${fel}</button>`;
+function eszkozHangok(){const hs=Felolv.hangok();if(!hs.length)return`<div class="halvany" style="margin-top:10px">Az eszköz hangjai ezen a böngészőn nem érhetők el.</div>`;
+  const lista=(l,k,cim)=>{const v=hs.filter(x=>x.lang.toLowerCase().replace("_","-").startsWith(l));return v.length?`<label>${cim} <span class="halvany">(az eszközé)</span></label><select onchange="Be.${k}=this.value;mentBe();Felolv.mond([{t:MINTA['${l}'],l:'${l}'}],'b')"><option value="">Automatikus</option>${v.map(x=>`<option value="${esc(x.name)}" ${Be[k]===x.name?"selected":""}>${esc(x.name)}</option>`).join("")}</select>`:""};
+  return lista("hu","bHu","🇭🇺 Magyar hang")+lista("en","bEn","🇬🇧 Angol hang")}
+function beallitasok(){const d=document.createElement("div");d.className="lap";d.onclick=e=>{if(e.target===d)d.remove()};
+  const ch=(k,v,fel)=>`<button class="valaszt ${Be[k]===v?"be":""}" onclick="Be['${k}']=${JSON.stringify(v).replace(/"/g,"&quot;")};mentBe();this.parentNode.querySelectorAll('.valaszt').forEach(x=>x.classList.remove('be'));this.classList.add('be')">${fel}</button>`;
+  const emlBlokk=`   <label>🔔 Napi emlékeztető</label><div class="chipsor">${ech(true,"Be")}${ech(false,"Ki")}</div>
+   <div class="sor" style="margin-top:8px;gap:8px"><span class="halvany">Ekkor szóljon:</span><input type="time" id="eido" value="${esc(Be.emlekezteto.ido)}" style="width:auto" onchange="Be.emlekezteto.ido=this.value;mentBe()"><button class="chip" style="border:0" onclick="emlProba(this)">Próba-értesítés</button></div>
+   <div class="halvany" style="margin-top:4px">A telefonodra az ntfy alkalmazáson át jön, rákoppintva megnyílik a Tanoda. Csak akkor szól, ha aznap még van tanulnivaló, naponta legfeljebb egyszer.</div>`;
+  const f=A.felhasznalo,prof=f?`<div class="sor" style="gap:10px;margin:8px 0 4px"><span style="font-size:2rem">${esc(f.emoji)}</span><div class="rug"><b>${esc(f.nev)}</b><div class="halvany">${f.vip?"⭐ VIP-profil – legfeljebb "+f.max_cel+" tanfolyam, külön haladás":f.vendeg?"Vendég-profil – külön haladás, napi AI-keret":"Tulajdonos-profil"}</div></div></div>
+   <div class="sor" style="gap:8px"><button class="gomb masodlagos" style="padding:9px 12px;font-size:.92rem" onclick="profilValtas()">↔ Profilváltás</button><button class="gomb masodlagos" style="padding:9px 12px;font-size:.92rem" onclick="this.closest('.lap').remove();visszajelzesNyit()">💬 Visszajelzés</button><button class="gomb masodlagos" style="padding:9px 12px;font-size:.92rem" onclick="pinBeallit()">${f.pin?"🔒 PIN módosítása":"🔓 PIN beállítása"}</button></div>
+   <div class="halvany" style="margin:6px 0 4px">Másik eszközről (ugyanazon a Wi-Fin) ezen a címen érhető el: <b>${esc(A.lan||"")}</b></div>`:"";
+  d.innerHTML=`<div><h3>⚙️ Beállítások</h3>${prof}
+   <label>🦖 Kabala</label><div class="chipsor">${kch("dino","🦖 Rexi, a dínó")}${kch("lapi","📚 Lapi, a könyv")}</div>
+   <label>🔊 Hanghatások</label><div class="chipsor">${ch("sfx",true,"Be")}${ch("sfx",false,"Ki")}</div>
+   <label>🗣️ Lecke felolvasása magától</label><div class="chipsor">${ch("auto",true,"Be")}${ch("auto",false,"Ki (csak gombra)")}</div>
+   <label>Felolvasó forrása</label><div class="chipsor">${ch("motor","auto","Automatikus")}${ch("motor","szerver","A Tanoda hangjai")}${ch("motor","bongeszo","Az eszköz hangja")}</div>
+   <div class="halvany" style="margin-top:4px">Automatikus: ha az eszközöd természetes magyar hangot ad, azt használja, különben a Tanoda hangjait.</div>
+   <label>🇭🇺 Magyar hang <span class="halvany">(Tanoda)</span></label><div class="chipsor">${vch("huHang","anna","Anna (női)")}${vch("huHang","berta","Berta (női)")}${vch("huHang","imre","Imre (férfi)")}</div>
+   <label>🇬🇧 Angol hang <span class="halvany">(Tanoda)</span></label><div class="chipsor">${vch("enHang","lessac","Lessac (női, amerikai)")}${vch("enHang","amy","Amy (női, amerikai)")}${vch("enHang","ryan","Ryan (férfi, amerikai)")}${vch("enHang","alba","Alba (női, brit)")}</div>
+   ${eszkozHangok()}
+   ${A.felhasznalo&&A.felhasznalo.vendeg?"":emlBlokk}
+   <label>Sebesség</label><div class="chipsor">${ch("seb",.9,"Lassabb")}${ch("seb",1,"Normál")}${ch("seb",1.15,"Gyorsabb")}</div>
+   <div class="sor" style="margin-top:16px;gap:8px"><button class="gomb masodlagos" onclick="Felolv.mond([{t:'Szia! Én vagyok ${KNEV()}. Együtt tanulunk, és hangosan felolvasom neked a leckéket.',l:'hu'}])">▶ Hangpróba</button><button class="gomb" onclick="this.closest('.lap').remove()">Kész</button></div></div>`;
+  document.body.appendChild(d)}
+/* ---------- konfetti ---------- */
+function konfetti(){const c=$("#konfetti"),x=c.getContext("2d");c.width=innerWidth;c.height=innerHeight;
+  const db=[...Array(120)].map(()=>({x:Math.random()*c.width,y:-20-Math.random()*c.height*.5,v:2+Math.random()*4,s:5+Math.random()*7,a:Math.random()*6,c:["#2fd16b","#ffc83d","#5db8ff","#ff7bb0","#8a5cf6"][Math.random()*5|0]}));
+  let n=0;(function k(){x.clearRect(0,0,c.width,c.height);db.forEach(p=>{p.y+=p.v;p.x+=Math.sin(p.a+=.08)*1.5;x.fillStyle=p.c;x.fillRect(p.x,p.y,p.s,p.s*.6)});
+  if(++n<200)requestAnimationFrame(k);else x.clearRect(0,0,c.width,c.height)})()}
+function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2800)}
+/* ---------- fejléc + főoldal ---------- */
+function fejlec(){const a=A,p=Math.min(100,Math.round(a.xp_szinten/a.xp_kell*100)),mp=Math.min(100,Math.round(a.mai.xp/a.mai_xp_cel*100));
+  return `<div class="fejlec"><div class="sor"><h2 style="font-size:1.3rem">🌿 Tanoda</h2><div class="rug"></div>
+   <span class="chip" title="Sorozat"><span class="lang">🔥</span> ${a.sorozat}</span><span class="chip" title="Fagyasztás: kiesés elleni védelem">🧊 ${a.fagyasztas}</span>
+   <button class="chip" style="border:0" title="Profil és beállítások" onclick="beallitasok()">${esc((a.felhasznalo||{}).emoji||"🧑")} ⚙️</button></div>
+   <div class="sor" style="margin-top:10px"><span class="chip">⭐ ${a.szint}. szint</span><div class="rug"><div class="sav"><i style="width:${p}%"></i></div></div><span class="halvany">${a.xp_szinten}/${a.xp_kell}</span></div>
+   <div class="sor" style="margin-top:8px"><span class="halvany">Mai cél</span><div class="rug"><div class="sav arany"><i style="width:${mp}%"></i></div></div><span class="halvany">${a.mai.xp}/${a.mai_xp_cel} XP</span></div></div>`}
+let Sor=[];
+const HET_NEV=["H","K","Sz","Cs","P","Sz","V"];
+function kartyaHtml(c){const p=c.lecke_ossz?Math.round(c.lecke_kesz/c.lecke_ossz*100):0;
+  const het=(c.het||[]).map(d=>`<span class="hp ${d.kesz?"k":d.ter?"t":""} ${d.ma?"m":""}" title="${d.kesz?"kész":d.ter?"tervezett":""}">${d.n}</span>`).join("");
+  let akcio="",allapot="";
+  if(c.allapot==="tervezes")allapot=`<div class="halvany">⏳ A terv készül…</div>`;
+  else if(c.allapot==="hiba")allapot=`<div class="halvany" style="color:var(--hiba-sz)">A terv nem sikerült: ${esc(c.hiba)}</div>`;
+  else if(c.allapot==="befejezve"){allapot=`<div class="halvany">🎓 Kész! Mind a ${c.lecke_ossz} lecke megvan.</div>`;akcio=`<button class="gomb ac" onclick="event.stopPropagation();cel('${c.id}')">➕ Következő szakasz</button>`}
+  else{
+    const kov=c.kovetkezo_cim?`<div class="halvany">${c.mai_kesz?"Következő":"Most jön"}: <b>${esc(c.kovetkezo_cim)}</b></div>`:"";
+    allapot=kov+(c.esedekes_kartya?`<div class="halvany">🃏 ${c.esedekes_kartya} kártya vár ismétlésre</div>`:"");
+    if(c.folyamat)allapot=`<div class="halvany">⏸ Félbehagyott lecke: ${c.folyamat.i}/${c.folyamat.ossz} lépés kész</div>`+allapot;
+    akcio=`<button class="gomb ac" onclick="event.stopPropagation();inditLecke('${c.id}','fo')">${c.folyamat?"↩ Folytatom":c.mai_kesz?"➕ Előre megyek":c.mai!==null?"▶ Mai lecke":"▶ Tanulunk egyet"}</button>`}
+  return `<div class="kartya tk" style="--ac:${c.szin}" onclick="cel('${c.id}')"><div class="sor"><div class="gyuru" style="--p:${p}"><b>${p}%</b></div>
+   <div class="rug"><h3>${esc(c.emoji)} ${esc(c.cim)}</h3><div class="halvany">${c.lecke_kesz}/${c.lecke_ossz} lecke · ${c.kartya_ossz} kártya · ${c.perc} perc/nap</div></div></div>
+   <div class="hetcsik">${het}</div>${allapot}${akcio}</div>`}
+async function fo(){A=await api("/api/allapot");if(A._401)return;Sor=[];if(A.beallitasok&&Object.keys(A.beallitasok).length){Object.assign(Be,A.beallitasok);localStorage.tanoda_be=JSON.stringify(Be);document.documentElement.dataset.kabala=Be.kabala==="lapi"?"lapi":"dino"}
+  const ora=new Date().getHours(),koszon=ora<5?"Késő van már – de ha tanulunk, én is ébren vagyok!":ora<10?"Jó reggelt! Kezdjük egy kis tanulással?":ora<18?"Szia! Mehet egy kör?":"Jó estét! Egy kis esti tanulás?";
+  const ures=!A.celok.length,aktiv=A.celok.filter(c=>c.allapot==="kesz"),maiak=aktiv.filter(c=>c.mai!==null&&!c.mai_kesz);
+  const kesz=aktiv.filter(c=>c.mai_kesz).length;
+  const uzenet=ures?"Szia, én "+KNEV()+" vagyok! Mondd meg, mit szeretnél megtanulni, és együtt kitaláljuk a tervet.":
+    maiak.length>1?`Ma ${maiak.length} tanfolyamon van lecke – mehet egyben, vagy egyenként!`:maiak.length===1?"Ma egy lecke vár. "+koszon:
+    kesz&&kesz===aktiv.length?"Mára mindennel megvagy – szép munka! 🎉":A.sorozat>=3?"🔥 "+A.sorozat+" napos a sorozatod – szuper vagy! "+koszon:koszon;
+  const sav=aktiv.length>1?`<div class="kartya sor" style="gap:12px"><div class="rug"><b>Mai kör</b><div class="halvany">${kesz}/${aktiv.length} tanfolyam kész ma</div></div>
+     ${maiak.length>1?`<button class="gomb" style="width:auto" onclick="maiKor()">▶ Mind a ${maiak.length} lecke</button>`:""}</div>`:"";
+  const lista=A.celok.map(kartyaHtml).join("")+`<div class="kartya tk ujkartya" onclick="uj()"><div class="nagy" style="font-size:2.4rem;animation:none">＋</div><b>Új tanulnivaló</b><div class="halvany">Több tanfolyamot is párhuzamosan vihetsz</div></div>`;
+  $("#app").classList.toggle("szeles",A.celok.length>0);
+  const jd=(A.jelzes_dontesek||[]),jelzesKartya=jd.length?`<div class="kartya"><b>📬 Elbíráltuk a jelzéseidet</b>${jd.map(j=>`<div class="halvany" style="margin-top:6px">${j.allapot==="elfogadva"?"✅ Elfogadtuk":"❌ Nem fogadtuk el"}: „${esc(j.felhasznalo)}” – ${esc(j.kerdes)}${j.megjegyzes?"<br><i>"+esc(j.megjegyzes)+"</i>":""}</div>`).join("")}<div style="height:8px"></div><button class="gomb masodlagos" style="padding:9px 12px" onclick="api('/api/jelzes/latta',{}).then(fo)">Rendben</button></div>`:"";
+  const vv=(A.vissza_valaszok||[]),visszaKartya=vv.length?`<div class="kartya"><b>📬 Válasz a visszajelzésedre</b>${vv.map(j=>`<div class="halvany" style="margin-top:6px">${j.allapot==="kesz"?"✅ Megoldottuk":"ℹ️ Átnéztük"}: „${esc(j.szoveg)}”<br><i>${esc(j.megjegyzes)}</i></div>`).join("")}<div style="height:8px"></div><button class="gomb masodlagos" style="padding:9px 12px" onclick="api('/api/jelzes/latta',{}).then(fo)">Rendben</button></div>`:"";
+  $("#app").innerHTML=fejlec()+`<div class="sor" style="gap:8px;margin:2px 0 6px">${CSIRA("")}<div class="buborek rug">${esc(uzenet)}</div></div>`+jelzesKartya+visszaKartya+sav+
+   (ures?`<div class="kartya kozep"><div class="nagy">🌱</div><h3>Mit szeretnél megtanulni?</h3><p class="halvany">Írd be, a Tanoda pedig terv, beosztás és anyagok szerint, játékosan tanít.</p></div>`:"")+
+   `<div class="tanfolyamok">${lista}</div>
+   <h3 style="margin-top:22px">🏅 Kitűzők</h3><div>${A.osszes_kituzo.map(k=>`<span class="kituzo ${k.megvan?"":"nincs"}" title="${esc(k.leiras)}"><b>${k.emoji}</b>${esc(k.nev)}</span>`).join("")}</div>`
+  if(!window._koszontve){window._koszontve=1;setTimeout(()=>kabala(A.sorozat>=3?"sorozat_nap":"koszon"),700)}}
+function maiKor(){Sor=A.celok.filter(c=>c.allapot==="kesz"&&c.mai!==null&&!c.mai_kesz).map(c=>c.id);const e=Sor.shift();if(e)inditLecke(e,"fo")}
+/* ---------- új tanulnivaló ---------- */
+const PELDAK=[["♟️","Sakk kezdőknek"],["🇬🇧","Angol társalgás"],["🇩🇪","Német alapok"],["🧮","Excel"],["🐍","Python programozás"],["🎸","Gitár"],["🧠","Soft skillek: tárgyalás"],["📈","Befektetés alapjai"]];
+function uj(){let f={perc:10,nap_hetente:5,hetek:4,szint:"kezdő",emoji:"📘"};window._f=f;
+  const csop=(k,ertekek,fmt)=>`<div class="chipsor">${ertekek.map(v=>`<button class="valaszt ${f[k]==v?"be":""}" data-k="${k}" data-v="${esc(v)}" onclick="vv(this)">${fmt(v)}</button>`).join("")}</div>`;
+  $("#app").innerHTML=`<div class="sor"><button class="chip" style="border:0" onclick="fo()">← Vissza</button></div><h2>Új tanulnivaló</h2>
+  <label>Mit szeretnél megtanulni?</label><input id="f_cim" placeholder="pl. Angol társalgás, Excel, gitározás…">
+  <div class="chipsor" style="margin-top:8px">${PELDAK.map(p=>`<button class="valaszt" onclick="document.getElementById('f_cim').value='${p[1]}';window._f.emoji='${p[0]}'">${p[0]} ${p[1]}</button>`).join("")}</div>
+  <label>Mi a célod? <span class="halvany">(mire kell, mit szeretnél tudni a végén)</span></label><textarea id="f_cel" rows="2" placeholder="pl. magabiztosan elbeszélgetni egy külföldi kollégával"></textarea>
+  <label>Jelenlegi szint</label>${csop("szint",["teljesen kezdő","kezdő","alapok megvannak","haladó"],v=>v)}
+  <label>Napi idő</label>${csop("perc",[5,10,15,20,30],v=>v+" perc")}
+  <label>Hetente hány napon?</label>${csop("nap_hetente",[2,3,4,5,6,7],v=>v+" nap")}
+  <label>Mekkora szakaszt tervezzünk?</label>${csop("hetek",[2,4,6,8],v=>v+" hét")}
+  <label>Bármi más <span class="halvany">(opcionális: milyen módszert szeretsz, mi nem tetszik)</span></label><textarea id="f_megj" rows="2"></textarea>
+  <div style="height:16px"></div><button class="gomb" onclick="letrehoz()">✨ Tervet kérek</button>`}
+function vv(b){const k=b.dataset.k;window._f[k]=isNaN(b.dataset.v)?b.dataset.v:+b.dataset.v;[...b.parentNode.children].forEach(x=>x.classList.toggle("be",x===b))}
+async function letrehoz(){const f=window._f;f.cim=$("#f_cim").value.trim();f.cel=$("#f_cel").value.trim();f.megjegyzes=$("#f_megj").value.trim();
+  if(!f.cim){toast("Írd be, mit szeretnél megtanulni.");return}
+  const r=await api("/api/cel",f);if(r.hiba){toast(r.hiba);return}
+  varakozas(r.munka,"Személyre szabott tervet készítek…",["Felmérem a szintedet…","Fejezetekre bontom az anyagot…","Beosztom az időt a heteidre…","Kitalálom, mivel kezdjünk…"],()=>cel(r.id))}
+/* ---------- várakozás (háttérmunka) ---------- */
+function varakozas(munka,cim,uzik,kesz,hiba){let i=0;const ki=()=>{$("#app").innerHTML=`<div class="kartya kozep" style="margin-top:60px">${CSIRA("nagy2","gondol")}<h3>${esc(cim)}</h3><p class="halvany" id="vu">${esc(uzik[0])}</p><div class="sav"><i id="vs" style="width:5%"></i></div><p class="halvany" id="vm">Ez néhány percig is eltarthat, nyugodtan várhatsz.</p></div>`};ki();
+  const t=setInterval(async()=>{i++;const u=$("#vu"),s=$("#vs");if(u)u.textContent=uzik[i%uzik.length];if(s)s.style.width=Math.min(92,5+i*3)+"%";
+    const j=await api("/api/munka/"+munka);if(j.allapot==="kesz"){clearInterval(t);kesz()}
+    else if(j.allapot==="hiba"||j.allapot==="ismeretlen"){clearInterval(t);$("#app").innerHTML=`<div class="kartya kozep" style="margin-top:60px">${CSIRA("nagy2","szomoru")}<h3>Nem sikerült</h3><p>${esc(j.hiba||"A munka elveszett (újraindult a szerver).")}</p><button class="gomb" onclick="${hiba||"fo()"}">Próbáld újra / vissza</button></div>`}},2500)}
+/* ---------- tanulnivaló oldala ---------- */
+let CC=null,ful="terv";
+async function cel(id,f){if(f)ful=f;const r=await api("/api/cel/"+id);if(r.hiba){toast(r.hiba);return fo()}CC=r;const c=r.cel,s=r.osszegzes;A=A||await api("/api/allapot");
+  if(c.allapot==="tervezes"){const m=await api("/api/cel/"+id+"/ujraterv",{});return varakozas(m.munka,"Tervet készítek…",["Gondolkodom…","Beosztom a heteket…"],()=>cel(id),`cel('${id}')`)}
+  if(c.allapot==="hiba"){$("#app").innerHTML=`<button class="chip" style="border:0" onclick="fo()">← Vissza</button><div class="kartya kozep"><div class="nagy">😕</div><p>${esc(c.hiba||"A terv nem sikerült.")}</p><button class="gomb" onclick="ujraTerv('${id}')">Újra megpróbálom</button></div>`;return}
+  const b=r.beosztas,ls=[];let n=0;
+  let elozoSz=1;
+  const tervHtml=c.terv.modulok.map(m=>{const sz=m.szakasz||1,jel=sz!==elozoSz?`<div class="kozep" style="margin:16px 0 4px"><span class="chip">🚀 ${sz}. szakasz</span></div>`:"";elozoSz=sz;return jel+`<div class="modul">${esc(m.cim)}</div><div class="halvany" style="margin-bottom:4px">${esc(m.cel||"")}</div>`+m.leckek.map(l=>{const kesz=b.kesz.includes(l.id),mai=b.mai===l.id,d=b.datumok[l.id],ered=r.cel.leckek_allapot[l.id]?.eredmeny;
+    return `<div class="lecke ${kesz?"kesz":""} ${mai?"mai":""}"><span class="pont">${kesz?"✓":l.id+1}</span><div class="rug"><b>${esc(l.cim)}</b><div class="halvany">${esc(l.tema||"")}</div></div>
+     <span class="halvany" style="white-space:nowrap">${kesz?(ered?ered.helyes+"/"+ered.osszes:"✓"):d?d.slice(5).replace("-","."):""}</span></div>`}).join("")}).join("");
+  const anyagHtml=c.anyagok&&c.anyagok.length?c.anyagok.map(a=>`<div class="kartya"><b><a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer">${esc(a.cim)}</a></b> <span class="chip" style="font-size:.75rem;padding:2px 8px">${esc(a.tipus)}</span><div class="halvany">${esc(a.miert)}${a.modul?" · "+esc(a.modul):""}</div></div>`).join("")+`<button class="gomb masodlagos" onclick="anyag('${id}')">🔄 Új gyűjtés</button>`:
+    `<div class="kartya kozep"><p>Még nincs anyaggyűjtés. A Tanoda a weben keres neked jó forrásokat (ingyenest, magyarul vagy angolul).</p><button class="gomb" onclick="anyag('${id}')">🔎 Anyagok gyűjtése</button></div>`;
+  const inditText=s.allapot==="befejezve"?"🎓 Kurzus kész!":s.mai_kesz?"➕ Előre megyek: következő lecke":s.mai!==null?"▶ Mai lecke":"▶ Következő lecke előre";
+  $("#app").innerHTML=`<div class="sor"><button class="chip" style="border:0" onclick="fo()">← Vissza</button><div class="rug"></div><button class="chip" style="border:0" onclick="torol('${id}')">🗑</button></div>
+   <h2>${esc(c.emoji)} ${esc(c.cim)}</h2><div class="halvany">${esc(c.terv.osszefoglalo)}</div>${c.hang_info&&c.hang_info.allapot?`<div class="halvany" style="margin:6px 0">${c.hang_info.allapot==="kesz"?"🔊 Hangcsomag: <b>"+esc(c.hang_info.nev)+"</b>":c.hang_info.allapot==="keszul"?"⏳ Hangcsomag letöltése: "+esc(c.hang_info.nev||"…"):"🔇 Ehhez a nyelvhez nem találtam természetes hangcsomagot – az eszközöd saját hangját használom."}</div>`:""}
+   <div class="sor" style="margin:12px 0"><div class="rug"><div class="sav"><i style="width:${Math.round(s.lecke_kesz/s.lecke_ossz*100)}%"></i></div></div><span class="halvany">${s.lecke_kesz}/${s.lecke_ossz}</span></div>
+   ${s.allapot==="befejezve"?"":`<button class="gomb" onclick="inditLecke('${id}')">${inditText}</button>`}
+   ${s.esedekes_kartya?`<div class="halvany" style="margin-top:8px">🃏 ${s.esedekes_kartya} ismétlőkártya vár – a következő leckébe beépítem.</div>`:""}
+   <div class="fulek"><button class="ful ${ful==="terv"?"be":""}" onclick="cel('${id}','terv')">📅 Terv</button><button class="ful ${ful==="anyag"?"be":""}" onclick="cel('${id}','anyag')">📚 Anyagok</button></div>
+   ${s.allapot==="befejezve"?`<div class="kartya kozep"><div class="nagy" style="font-size:3rem;animation:none">🎓</div><h3>Kész a tanfolyam!</h3></div>`:""}
+   ${(s.allapot==="befejezve"||s.lecke_ossz-s.lecke_kesz<=2)?bovitHtml(id,true):""}
+   ${ful==="terv"?`<div class="halvany">${(c.terv.modszerek||[]).map(esc).join(" · ")}</div>`+tervHtml+((s.allapot!=="befejezve"&&s.lecke_ossz-s.lecke_kesz>2)?bovitHtml(id,false):""):anyagHtml}`}
+function bovitHtml(id,ajanlott){window._bv={hetek:4};
+  return `<div class="kartya" style="border-color:var(--zold)"><b>${ajanlott?"🚀 Mehet a következő szakasz?":"➕ Szakasz hozzáadása"}</b>
+  <div class="halvany">${ajanlott?"Mindjárt a végére érsz – a Tanoda az eddigi teljesítményed alapján folytatja a tervet.":"Meghosszabbítom a tervet a mostani haladásod alapján."}</div>
+  <label>Mekkora szakasz?</label><div class="chipsor">${[2,4,6].map(x=>`<button class="valaszt ${x===4?"be":""}" onclick="window._bv.hetek=${x};[...this.parentNode.children].forEach(y=>y.classList.toggle('be',y===this))">${x} hét</button>`).join("")}</div>
+  <label>Mire fókuszáljunk? <span class="halvany">(opcionális)</span></label><input id="bv_fokusz" placeholder="pl. több beszéd, nehezebb szint">
+  <div style="height:10px"></div><button class="gomb" onclick="bovit('${id}')">✨ Szakasz tervezése</button></div>`}
+async function bovit(id){const r=await api("/api/cel/"+id+"/bovit",{hetek:window._bv.hetek,fokusz:($("#bv_fokusz")||{value:""}).value.trim()});if(r.hiba){toast(r.hiba);return}
+  varakozas(r.munka,"Folytatom a terved…",["Átnézem, mi ment jól…","Megkeresem a gyenge pontokat…","Megtervezem a következő leckéket…"],()=>cel(id),`cel('${id}')`)}
+async function ujraTerv(id){const m=await api("/api/cel/"+id+"/ujraterv",{});varakozas(m.munka,"Tervet készítek…",["Gondolkodom…"],()=>cel(id),`cel('${id}')`)}
+async function anyag(id){const m=await api("/api/cel/"+id+"/anyag",{});if(m.hiba){toast(m.hiba);return}
+  varakozas(m.munka,"Anyagokat keresek a weben…",["Keresek…","Válogatok a találatok közül…","Ellenőrzöm, hogy jó-e a forrás…"],()=>cel(id,"anyag"),`cel('${id}','anyag')`)}
+async function torol(id){if(confirm("Biztosan törlöd ezt a tanulnivalót és a haladásodat?")){await api("/api/cel/"+id+"/torol",{});fo()}}
+/* ---------- lecke-lejátszó ---------- */
+let L=null;
+async function inditLecke(id,honnan){window._honnan=honnan||"cel";const r=await api("/api/cel/"+id+"/lecke",{});if(r.hiba){toast(r.hiba);return}
+  if(r.kesz)return lejatszo(id,r);
+  varakozas(r.munka,"A mai leckét írom…",["Összeállítom a gyakorlatokat…","Kitalálom a jó csapdakérdéseket…","Beleszövöm, amit nehezen jegyzel meg…"],async()=>{const q=await api("/api/cel/"+id+"/lecke",{lecke:r.lecke});q.kesz?lejatszo(id,q):toast(q.hiba||"Hiba")},`cel('${id}')`)}
+function lejatszo(id,r){
+  if(r.folyamat&&r.folyamat.i>0&&!r._d){const d=document.createElement("div");d.className="lap";
+    d.innerHTML=`<div><div class="kozep">${CSIRA("nagy2")}</div><h3 class="kozep">Félbehagytad ezt a leckét</h3><p class="halvany kozep">${esc(r.cim)} – ${r.folyamat.i}. lépésnél tartottál (akár másik eszközön is). Folytatod ott?</p>
+     <button class="gomb" id="fk">↩ Folytatom</button><div style="height:10px"></div><button class="gomb masodlagos" id="fu">Újrakezdem</button></div>`;
+    document.body.appendChild(d);$("#fk").onclick=()=>{d.remove();lejatszo(id,{...r,_d:"f"})};$("#fu").onclick=()=>{d.remove();lejatszo(id,{...r,_d:"u"})};return}
+  const t=r.tartalom,items=[{t:"intro",cim:r.cim,szoveg:t.bevezeto,abrak:t.abrak||[]}];
+  ((r._d==="f"&&r.folyamat?r.folyamat.esedekes:null)||r.esedekes||[]).forEach(k=>items.push({t:"felidez",id:k.id,elol:k.elol,hatul:k.hatul}));
+  t.gyakorlatok.forEach((g,gi)=>items.push({t:g.tipus,gi,...g}));
+  L={id,idx:r.lecke,items,i:0,helyes:0,osszes:0,kombo:0,max_kombo:0,bonusz:0,kr:{},nyelv:r.nyelv,szegmensek:r.szegmensek||[],esedekes:(r._d==="f"&&r.folyamat?r.folyamat.esedekes:null)||r.esedekes||[]};
+  L.mini=t.miniapp||null;if(L.mini&&L.mini.allapot==="keszul")miniappFigyel();
+  if(r._d==="f"&&r.folyamat){const f=r.folyamat;Object.assign(L,{i:Math.min(f.i,items.length-1),helyes:f.helyes,osszes:f.osszes,kombo:f.kombo,max_kombo:f.max_kombo,bonusz:f.bonusz,kr:f.kr||{}})}
+  let d=$("#lj");if(!d){d=document.createElement("div");d.id="lj";document.body.appendChild(d)}
+  d.innerHTML=`<div class="tet"><button class="x" onclick="kilep()">✕</button><div class="sav"><i id="pr" style="width:0"></i></div><button class="x" id="vjb" title="Visszajelzés küldése" onclick="visszajelzesNyit()" style="font-size:1.25rem">💬</button><button class="x" id="anyagb" title="Vissza a lecke anyagához" onclick="anyagMutat()" style="visibility:hidden">📖</button><button class="x" id="sk" title="Beszéd (felolvasás) ki/be" onclick="beszedKapcs()">${Be.auto?"🗣️":"🤫"}</button><button class="x" id="hk" title="Hanghatások ki/be" onclick="effektKapcs()">${Be.sfx?"🔔":"🔕"}</button></div><div class="csirasor">${CSIRA()}<div class="buborek rug" id="bub">Szia! Kezdjük?</div></div><div class="test" id="lt"></div><div class="lab" id="ll"></div>`;
+  sfx.kezdes();lepes()}
+function beszedKapcs(){Be.auto=!Be.auto;mentBe();const b=$("#sk");if(b)b.textContent=Be.auto?"🗣️":"🤫";
+  if(!Be.auto){Felolv.stop();if(aud)aud.pause();const f=$("#fb");if(f)f.textContent="🔊 Meghallgatom"}
+  toast(Be.auto?"Beszéd bekapcsolva – a felolvasás magától indul.":"Beszéd kikapcsolva – a 🔊 gombokra koppintva még meghallgathatod.")}
+function effektKapcs(){Be.sfx=!Be.sfx;mentBe();const b=$("#hk");if(b)b.textContent=Be.sfx?"🔔":"🔕";if(Be.sfx)sfx.jo();toast(Be.sfx?"Hanghatások bekapcsolva":"Hanghatások kikapcsolva")}
+function anyagMutat(){const it=L&&L.items&&L.items[0];if(!it)return;Felolv.stop();
+  const d=document.createElement("div");d.className="lap";const zar=()=>{Felolv.stop();d.remove();csiraA("idle")};d.onclick=e=>{if(e.target===d)zar()};
+  d.innerHTML=`<div><div class="sor" style="gap:8px"><h3 class="rug" style="margin:0">📖 ${esc(it.cim)}</h3><button class="chip" style="border:0" id="anx">✕ Vissza a feladathoz</button></div>
+   <div class="md" style="font-size:1.05rem;margin-top:8px">${md(it.szoveg)}</div>${(it.abrak||[]).map(abraHtml).join("")}${miniappKartya()}
+   ${(L.szegmensek||[]).length?`<div class="hangvezer"><button class="gomb masodlagos" id="anh">🔊 Meghallgatom</button></div>`:""}</div>`;
+  document.body.appendChild(d);csiraA("olvas");$("#anx").onclick=zar;const hb=$("#anh");if(hb)hb.onclick=()=>{if(Felolv.beszel)Felolv.stop();else Felolv.mond(L.szegmensek)}}
+/* ---------- mini-alkalmazás a leckében (elkülönített iframe: nincs hálózat, nincs hozzáférés az apphoz) ---------- */
+let miniT=null;
+const MINI_BECSLES={kicsi:["kb. 1–2 perc","kb. 5 ezer token"],kozepes:["kb. 3–5 perc","kb. 12 ezer token"],nagy:["kb. 6–10 perc","kb. 25 ezer token"]};
+function miniappKartya(){const m=typeof L!=="undefined"&&L&&L.mini;if(!m||m.allapot==="elutasitva")return"";const b=MINI_BECSLES[m.meret]||["",""];let t;
+  if(m.allapot==="kesz")t=`<button class="gomb" onclick="miniappNyit()">🎮 Megnyitom</button>`;
+  else if(m.allapot==="keszul")t=`<div class="halvany">⏳ Készül (${b[0]}) – közben nyugodtan folytathatod a leckét, szólok, ha kész.</div>`;
+  else if(m.allapot==="hiba")t=`<div class="halvany">Nem sikerült elkészíteni${m.hiba?": "+esc(m.hiba):""}</div><div style="height:8px"></div><button class="gomb masodlagos" onclick="miniappDonto('keszit')">Újra megpróbálom</button>`;
+  else t=`<div class="halvany">Ez egy <b>${esc(m.meret)}</b> mini-alkalmazás: ${b[0]} és ${b[1]} AI-használat. Elkészítsem?</div><div class="sor" style="gap:8px;margin-top:8px"><button class="gomb" onclick="miniappDonto('keszit')">✨ Elkészítem</button><button class="gomb masodlagos" onclick="miniappDonto('nem')">Most nem</button></div>`;
+  return `<div class="abra mkartya"><div class="abracim">🎮 ${esc(m.cim)}</div><div class="halvany" style="margin-bottom:8px">${esc(m.miert)}</div>${t}</div>`}
+function miniappFrissit(){document.querySelectorAll(".mkartya").forEach(e=>{e.outerHTML=miniappKartya()})}
+function miniappFigyel(){if(miniT)return;miniT=setInterval(async()=>{if(!L||!L.mini||L.mini.allapot!=="keszul"){clearInterval(miniT);miniT=null;return}
+  const r=await api("/api/cel/"+L.id+"/miniapp/"+L.idx);if(r.allapot&&r.allapot!=="keszul"){L.mini.allapot=r.allapot;L.mini.hiba=r.hiba;clearInterval(miniT);miniT=null;miniappFrissit();if(r.allapot==="kesz"){toast("🎮 Elkészült a mini-alkalmazás!");sfx.kituzo()}}},4000)}
+async function miniappDonto(d){const r=await api("/api/cel/"+L.id+"/miniapp",{lecke:L.idx,dontes:d});if(r.hiba){toast(r.hiba);return}
+  L.mini.allapot=d==="nem"?"elutasitva":"keszul";miniappFrissit();if(d!=="nem")miniappFigyel()}
+async function miniappNyit(){const r=await api("/api/cel/"+L.id+"/miniapp/"+L.idx+"?html=1");if(!r.html){toast("Nem sikerült megnyitni.");return}
+  Felolv.stop();const d=document.createElement("div");d.className="miniappablak";
+  d.innerHTML=`<div class="miniapptet"><b class="rug">🎮 ${esc(L.mini.cim)}</b><button class="chip" style="border:0" id="mzar">✕ Bezár</button></div><iframe id="mkeret" sandbox="allow-scripts" title="Mini-alkalmazás"></iframe>`;
+  document.body.appendChild(d);const fr=$("#mkeret");fr.srcdoc=r.html;
+  const fig=async e=>{if(e.source!==fr.contentWindow||!e.data||e.data.tanoda!=="kesz")return;const x=await api("/api/cel/"+L.id+"/miniapp_kesz",{lecke:L.idx});if(x.xp){toast("🎉 Kész! +"+x.xp+" XP");sfx.vege();csiraA("orul",900)}};
+  window.addEventListener("message",fig);$("#mzar").onclick=()=>{window.removeEventListener("message",fig);d.remove()}}
+async function leckeUjra(){if(!confirm("Új változatot generálok ehhez a leckéhez (ez AI-használat), a mostani eldobódik. Mehet?"))return;
+  const r=await api("/api/cel/"+L.id+"/lecke_ujra",{lecke:L.idx});if(!r.ok){toast(r.hiba||"Nem sikerült");return}
+  Felolv.stop();$("#lj")?.remove();inditLecke(L.id,window._honnan)}
+function visszajelzesNyit(){const k={};try{const lj=document.querySelector("#lj");k.profil=(A&&A.felhasznalo&&A.felhasznalo.nev)||"";
+    if(lj&&typeof L!=="undefined"&&L){const c=(A&&A.celok||[]).find(x=>x.id===L.id);k.tanfolyam=(c&&c.cim)||L.id;k.lecke=(L.items&&L.items[0]&&L.items[0].cim)||"";k.lecke_sorszam=L.idx+1;
+      const it=L.items&&L.items[L.i];if(it){k.lepes=(L.i+1)+"/"+L.items.length+" · "+it.t;if(it.kerdes)k.kerdes=String(it.kerdes).slice(0,150)}}
+    k.kabala=Be.kabala;k.tema=matchMedia("(prefers-color-scheme: dark)").matches?"sötét":"világos";k.kepernyo=innerWidth+"x"+innerHeight;k.https=isSecureContext?"igen":"nem";k.eszkoz=navigator.userAgent.slice(0,110)}catch(e){}
+  window._vk="hiba";const d=document.createElement("div");d.className="lap";d.onclick=e=>{if(e.target===d)d.remove()};
+  d.innerHTML=`<div><div class="sor" style="gap:8px"><h3 class="rug" style="margin:0">💬 Visszajelzés</h3><button class="chip" style="border:0" id="vzar">✕</button></div>
+   <label>Miről van szó?</label><div class="chipsor">${[["hiba","🐞 Hiba"],["otlet","💡 Ötlet"],["ertheto","😕 Nem érthető"],["tetszik","👍 Tetszik"]].map(([x,f],i)=>`<button class="valaszt ${i===0?"be":""}" onclick="window._vk='${x}';[...this.parentNode.children].forEach(y=>y.classList.toggle('be',y===this))">${f}</button>`).join("")}</div>
+   <label>Mit tapasztaltál, vagy mit javasolsz?</label><textarea id="vszoveg" rows="5" maxlength="1500" placeholder="pl. A sakk-leckében nem látok táblát, csak lépéskódokat…"></textarea>
+   <div class="halvany" style="margin-top:6px">Automatikusan csatolom, hol tartasz (tanfolyam, lecke, feladat), hogy könnyebb legyen megtalálni a gondot. Átnézi az admin és az AI-fejlesztő is.</div>
+   <div style="height:12px"></div><button class="gomb" id="vkuld">Küldés</button></div>`;
+  document.body.appendChild(d);$("#vzar").onclick=()=>d.remove();$("#vszoveg").focus();
+  $("#vkuld").onclick=async()=>{const sz=$("#vszoveg").value.trim();if(sz.length<3){toast("Írj egy-két mondatot, kérlek.");return}
+    $("#vkuld").disabled=true;const r=await api("/api/visszajelzes",{kategoria:window._vk,szoveg:sz,kontextus:k});
+    if(r.ok){d.remove();toast("📨 Köszönjük! Megkaptuk a visszajelzésedet.");sfx.jo()}else{$("#vkuld").disabled=false;toast(r.hiba||"Nem sikerült elküldeni")}}}
+function kilep(){if(confirm("Kilépsz? A haladásod mentve marad, bármelyik eszközön folytathatod.")){Felolv.stop();Sor=[];$("#lj")?.remove();window._honnan==="fo"?fo():cel(L.id)}}
+function lepes(){const it=L.items[L.i];
+  if(!it)return vege();
+  Felolv.stop();Felolv.vege=null;
+  $("#pr").style.width=Math.round(L.i/L.items.length*100)+"%";
+  const ab=$("#anyagb");if(ab)ab.style.visibility=L.i>0?"visible":"hidden";
+  const lt=$("#lt");lt.classList.remove("be-anim");void lt.offsetWidth;lt.classList.add("be-anim");lt.scrollTop=0;
+  if(L.i>0){sfx.lapoz();fetch("/api/cel/"+L.id+"/folyamat",{method:"POST",headers:{"Content-Type":"application/json"},keepalive:true,
+    body:JSON.stringify({lecke:L.idx,i:L.i,helyes:L.helyes,osszes:L.osszes,kombo:L.kombo,max_kombo:L.max_kombo,bonusz:L.bonusz,kr:L.kr,esedekes:L.esedekes})}).catch(()=>{})}
+  if(it.t!=="intro")buborek(veletlen({felidez:["Mire emlékszel?","Ezt már láttuk!"],teszt:["Gondolkodj nyugodtan!","Melyik lehet?"],ird:["Írd le a saját szavaiddal!","Menni fog!"],parosit:["Keresd a párját!","Kezdd a könnyebbekkel!"],rendez:["Rakd sorba!","Melyik jön először?"],hallgat:["Figyelj jól!","Hallgasd meg többször is!"],mondd:["Mondd ki hangosan!","Nem baj, ha nem tökéletes!"],tabla:["Nézd meg jól a táblát!","Gondold végig a lépést!"]}[it.t]||["Menni fog!"]));
+  ({intro,felidez,teszt,ird,parosit,rendez,hallgat,mondd,tabla})[it.t](it);
+  if(it.t==="intro"&&L.i===0)kabala("lecke_indul");else if(["ird","mondd","tabla"].includes(it.t)&&Math.random()<.6)kabala("nehez")}
+const tov=(felirat="Tovább")=>{$("#ll").innerHTML=`<button class="gomb" id="tb">${felirat}</button>`;$("#tb").onclick=()=>{L.i++;lepes()}};
+function pont(jo,el){L.osszes++;
+  if(jo){L.helyes++;L.kombo++;L.max_kombo=Math.max(L.max_kombo,L.kombo);
+    if(L.kombo>=3){L.bonusz+=Math.min(6,(L.kombo-2)*2);const k=document.createElement("div");k.className="kombo";k.textContent="🔥 ×"+L.kombo;document.body.appendChild(k);setTimeout(()=>k.remove(),900);sfx.kombo(L.kombo)}
+    L.rosszSor=0;joHang();rez(30);kabala(L.kombo>=8?"sorozat8":L.kombo>=5?"sorozat5":L.kombo>=3?"sorozat3":"helyes");szikraEl(el||$(".csira"),L.kombo>=3?14:8);buborek(L.kombo>=3?veletlen(["Tüzes vagy! 🔥","Ez egy sorozat!","Megállíthatatlan!"]):veletlen(["Szép volt!","Pontosan!","Ügyes vagy!","Igen! 🎉"]))}
+  else{L.kombo=0;L.rosszSor=(L.rosszSor||0)+1;rosszHang();rez([60,40,60]);kabala(L.rosszSor>=2?"hibas2":"hibas");buborek(veletlen(["Semmi baj, így tanulunk!","Majd legközelebb!","Nézd meg a magyarázatot!","Nem baj, megjegyezzük."]))}}
+function visszajelzes(jo,it,extra=""){$("#lt").insertAdjacentHTML("beforeend",`<div class="vissza ${jo?"jo":"rossz"}"><b>${jo?["Szép!","Igen!","Remek!","Pontosan!"][Math.random()*4|0]:"Nem egészen."}</b> ${extra}<div class="md">${md(it.magyarazat||"")}</div></div>`);tov(jo?"Tovább":"Értem, tovább")}
+function intro(it){const sz=L.szegmensek||[];
+  $("#lt").innerHTML=`<div class="halvany">Mai lecke</div><h2>${esc(it.cim)}</h2><div class="md" style="font-size:1.05rem">${md(it.szoveg)}</div>${(it.abrak||[]).map(abraHtml).join("")}${miniappKartya()}
+   ${sz.length?`<div class="hangvezer"><button class="gomb masodlagos" id="fb">🔊 Meghallgatom</button></div>`:""}
+   <div class="sor" style="gap:8px;margin-top:12px;flex-wrap:wrap"><button class="chip" style="border:0" onclick="leckeUjra()">🔄 Nem jó ez a lecke? Új változatot kérek</button><button class="chip" style="border:0" onclick="visszajelzesNyit()">💬 Visszajelzés</button></div>`;
+  buborek(sz.length?"Felolvasom neked, hallgasd csak!":"Olvasd el, aztán gyakorlunk!");csiraA("olvas");
+  const be=$("#fb"),inditas=()=>Felolv.mond(sz),allj=()=>{Felolv.stop();if(be)be.textContent="🔊 Meghallgatom"};
+  if(be){be.onclick=()=>{if(Felolv.beszel){allj()}else{inditas();be.textContent="⏸ Megállítom"}};
+    Felolv.vege=()=>{if(be)be.textContent="🔊 Még egyszer";csiraA("olvas")};
+    if(Be.auto){setTimeout(()=>{if(L.i===0){inditas();be.textContent="⏸ Megállítom"}},500)}}
+  tov("Kezdjük! 🚀")}
+function felidez(it){$("#lt").innerHTML=`<div class="halvany">🃏 Felidézés – mire emlékszel?</div><div class="flip" id="fl">${esc(it.elol)}</div>`;
+  $("#ll").innerHTML=`<button class="gomb masodlagos" id="mb">Mutasd a választ</button>`;
+  $("#mb").onclick=()=>{$("#fl").innerHTML=`<div><div class="halvany" style="font-weight:400">${esc(it.elol)}</div><div style="margin-top:8px">${esc(it.hatul)}</div></div>`;
+    $("#ll").innerHTML=`<div class="sor"><button class="gomb veszely" id="nb">Nem tudtam</button><button class="gomb" id="jb">Tudtam ✓</button></div>`;
+    const v=ok=>{L.kr[it.id]=ok;ok?joHang():rosszHang();L.i++;lepes()};$("#nb").onclick=()=>v(false);$("#jb").onclick=()=>v(true)}}
+function teszt(it){const sorrend=it.valaszok.map((v,i)=>i).sort(()=>Math.random()-.5);
+  $("#lt").innerHTML=`<div class="kerdes">${esc(it.kerdes)}</div>${abraBe(it)}`+sorrend.map(i=>`<button class="opcio" data-i="${i}">${esc(it.valaszok[i])}</button>`).join("");
+  [...document.querySelectorAll(".opcio")].forEach(b=>b.onclick=()=>{const i=+b.dataset.i,jo=i===+it.helyes;
+    document.querySelectorAll(".opcio").forEach(x=>{x.disabled=true;if(+x.dataset.i===+it.helyes)x.classList.add("jo")});if(!jo)b.classList.add("rossz");pont(jo,b);visszajelzes(jo,it)})}
+/* ---------- szemléltető ábrák (az adat a szervertől tisztítva érkezik; minden szöveg esc()-elt) ---------- */
+const SZIN6=["#2fd16b","#5db8ff","#ffc83d","#ff7bb0","#a78bfa","#ff8f5a"];
+const TEREM={
+  ures:()=>`<rect width="200" height="120" fill="#eaf4ee"/><circle cx="30" cy="95" r="40" fill="#d8ecdf"/><circle cx="175" cy="20" r="34" fill="#dcefe4"/>`,
+  kint:()=>`<rect width="200" height="120" fill="#bfe6ff"/><circle cx="168" cy="26" r="14" fill="#ffd75e"/><ellipse cx="55" cy="26" rx="22" ry="7" fill="#fff"/><ellipse cx="72" cy="22" rx="14" ry="6" fill="#fff"/><ellipse cx="60" cy="150" rx="150" ry="62" fill="#7bd88f"/><ellipse cx="170" cy="140" rx="110" ry="50" fill="#5cc77a"/>`,
+  szoba:()=>`<rect width="200" height="120" fill="#fdf0dc"/><rect y="86" width="200" height="34" fill="#e2b98a"/><rect x="146" y="14" width="40" height="38" rx="3" fill="#bfe6ff" stroke="#fff" stroke-width="3"/><path d="M166 14v38M146 33h40" stroke="#fff" stroke-width="2"/>`,
+  kavezo:()=>`<rect width="200" height="120" fill="#f3d9b8"/>${[0,1,2,3,4,5,6,7].map(i=>`<rect x="${i*25}" y="0" width="25" height="16" fill="${i%2?"#fff":"#ff6b6b"}"/>`).join("")}<rect y="84" width="200" height="36" fill="#8a5a3b"/><rect y="80" width="200" height="6" fill="#a8744d"/>`,
+  iskola:()=>`<rect width="200" height="120" fill="#e7f1e4"/><rect x="26" y="12" width="148" height="52" rx="4" fill="#2f5d46" stroke="#b8855a" stroke-width="4"/><rect y="90" width="200" height="30" fill="#d9c29c"/>`,
+  viz:()=>`<rect width="200" height="120" fill="#8fd3ff"/><path d="M0 70 q12 -10 25 0 t25 0 t25 0 t25 0 t25 0 t25 0 t25 0 t25 0 V120 H0Z" fill="#4aa8e0"/><path d="M0 92 q12 -8 25 0 t25 0 t25 0 t25 0 t25 0 t25 0 t25 0 t25 0 V120 H0Z" fill="#2f8ccb"/>`,
+  ejszaka:()=>`<rect width="200" height="120" fill="#1c2a52"/><circle cx="160" cy="26" r="13" fill="#fff3c4"/><circle cx="165" cy="22" r="11" fill="#1c2a52"/>${[[20,18],[48,34],[84,12],[112,40],[134,16],[30,62],[180,70],[96,70]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="1.4" fill="#fff"/>`).join("")}<rect y="100" width="200" height="20" fill="#16203f"/>`};
+function szoMond(e){const t=e.dataset.t;if(!t)return;Felolv.mond([{t,l:(typeof L!=="undefined"&&L&&L.nyelv)?L.nyelv:"hu"}]);szikraEl(e.querySelector("text"),5)}
+/* ---------- sakktábla (ábra és kattintós feladat) ---------- */
+const SAKK_JEL={K:"♚",Q:"♛",R:"♜",B:"♝",N:"♞",P:"♟"};
+function fenTabla(fen){return fen.split("/").map(s=>{const r=[];for(const c of s){if(/\d/.test(c))for(let i=0;i<+c;i++)r.push("");else r.push(c)}return r})}
+function tablaSvg(a,kattinthato){const t=fenTabla(a.fen),M=22,O=a.koordinata===false?3:13,B=3,W=8*M+O+B,H=8*M+B+(a.koordinata===false?3:12);
+  const cx=m=>O+("abcdefgh".indexOf(m[0])+.5)*M,cy=m=>B+(8-+m[1]+.5)*M;let s=`<svg viewBox="0 0 ${W} ${H}" class="sakk" role="img">`;
+  for(let r=0;r<8;r++)for(let f=0;f<8;f++)s+=`<rect x="${O+f*M}" y="${B+r*M}" width="${M}" height="${M}" fill="${(f+r)%2?"#b58863":"#f0d9b5"}"/>`;
+  if(a.koordinata!==false){for(let f=0;f<8;f++)s+=`<text x="${O+(f+.5)*M}" y="${B+8*M+8.5}" font-size="6.5" text-anchor="middle" fill="currentColor" font-weight="700">${"abcdefgh"[f]}</text>`;
+    for(let r=0;r<8;r++)s+=`<text x="${O-5}" y="${B+(r+.5)*M+2.3}" font-size="6.5" text-anchor="middle" fill="currentColor" font-weight="700">${8-r}</text>`}
+  (a.kiemel||[]).forEach(m=>{const occ=t[8-+m[1]][ "abcdefgh".indexOf(m[0])];s+=occ?`<circle cx="${cx(m)}" cy="${cy(m)}" r="${M*.46}" fill="none" stroke="rgba(34,184,92,.95)" stroke-width="2.2"/>`:`<circle cx="${cx(m)}" cy="${cy(m)}" r="${M*.2}" fill="rgba(34,184,92,.9)"/>`});
+  for(let r=0;r<8;r++)for(let f=0;f<8;f++){const c=t[r][f];if(c){const feher=c===c.toUpperCase();s+=`<text class="bábu" x="${O+(f+.5)*M}" y="${B+(r+.5)*M+M*.3}" font-size="${M*.88}" text-anchor="middle" fill="${feher?"#ffffff":"#222222"}" stroke="${feher?"#1b1b1b":"#f4f4f4"}" stroke-width="${feher?.9:.5}">${SAKK_JEL[c.toUpperCase()]}\uFE0E</text>`}}
+  (a.nyilak||[]).forEach(([x,y])=>{const x1=cx(x),y1=cy(x),x2=cx(y),y2=cy(y),d=Math.hypot(x2-x1,y2-y1)||1,ux=(x2-x1)/d,uy=(y2-y1)/d,hl=7,px=-uy,py=ux,bx=x2-ux*hl,by=y2-uy*hl;
+    s+=`<line x1="${x1}" y1="${y1}" x2="${bx}" y2="${by}" stroke="rgba(255,120,0,.9)" stroke-width="3" stroke-linecap="round"/><polygon points="${x2},${y2} ${bx+px*4.2},${by+py*4.2} ${bx-px*4.2},${by-py*4.2}" fill="rgba(255,120,0,.95)"/>`});
+  if(kattinthato)for(let r=0;r<8;r++)for(let f=0;f<8;f++){const m="abcdefgh"[f]+(8-r);s+=`<rect class="ov" data-m="${m}" x="${O+f*M}" y="${B+r*M}" width="${M}" height="${M}" fill="transparent" style="cursor:pointer"/>`}
+  return s+"</svg>"}
+const ABRA={
+  tabla:a=>`<div class="tablabe">${tablaSvg(a)}</div>`,
+  jelenet:a=>`<svg viewBox="0 0 200 120" role="img">${(TEREM[a.hatter]||TEREM.ures)()}${a.elemek.map((e,i)=>{const fs=11+e.meret*6,x=e.x*2,y=e.y*1.2,w=Math.max(16,e.felirat.length*3.7+9);
+    return `<g class="jel" style="--i:${i}" data-t="${esc(e.felirat)}" onclick="szoMond(this)"><text class="em" x="${x}" y="${y}" font-size="${fs}" text-anchor="middle" dominant-baseline="middle">${esc(e.emoji)}</text>${e.felirat?`<rect x="${x-w/2}" y="${Math.min(110,y+fs*.62)}" width="${w}" height="10" rx="5" fill="#fff" fill-opacity=".92"/><text x="${x}" y="${Math.min(110,y+fs*.62)+5.4}" font-size="6.3" font-weight="700" fill="#14281d" text-anchor="middle" dominant-baseline="middle">${esc(e.felirat)}</text>`:""}</g>`}).join("")}</svg>`+(a.elemek.some(e=>e.felirat)?`<div class="tippabra">👆 Koppints egy képre, és meghallgatod!</div>`:""),
+  folyamat:a=>`<div class="fl">${a.lepesek.map((s,i)=>`<div class="fl-lep" style="--i:${i}"><span class="fl-ikon">${esc(s.ikon||i+1)}</span><span>${esc(s.szoveg)}</span></div>${i<a.lepesek.length-1?`<div class="fl-nyil" style="--i:${i}">⬇</div>`:""}`).join("")}</div>`,
+  idovonal:a=>`<div class="iv">${a.pontok.map((p,i)=>`<div class="iv-p" style="--i:${i}"><b><span class="ik">${esc(p.ikon)}</span>${esc(p.cimke)}</b>${esc(p.szoveg)}</div>`).join("")}</div>`,
+  osszehasonlit:a=>`<div class="vs">${[[a.bal,SZIN6[0]],[a.jobb,SZIN6[1]]].map(([o,sz])=>`<div><h4 style="background:${sz}">${esc(o.cim)}</h4><ul>${o.pontok.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div>`).join("")}</div>`,
+  diagram:a=>{const d=a.adatok,mx=Math.max(...d.map(x=>x.ertek))||1,ossz=d.reduce((s,x)=>s+x.ertek,0);
+    if(a.forma==="kor"){let off=25;return `<div style="display:flex;gap:12px;align-items:center"><svg viewBox="0 0 42 42" style="width:46%;flex:none">${d.map((x,i)=>{const p=x.ertek/ossz*100,r=`<circle class="szelet" style="--i:${i}" cx="21" cy="21" r="15.9155" fill="none" stroke="${SZIN6[i%6]}" stroke-width="8" stroke-dasharray="${p} ${100-p}" stroke-dashoffset="${off}"/>`;off-=p;return r}).join("")}</svg><div class="legenda" style="flex-direction:column">${d.map((x,i)=>`<span><i style="background:${SZIN6[i%6]}"></i>${esc(x.cimke)}: <b>${Math.round(x.ertek/ossz*100)}%</b></span>`).join("")}</div></div>`}
+    const n=d.length,bw=Math.min(26,150/n),gap=(180-bw*n)/(n+1);
+    return `<svg viewBox="0 0 200 116"><line x1="10" y1="92" x2="192" y2="92" stroke="#93b0a0" stroke-width=".8"/>${d.map((x,i)=>{const hh=x.ertek/mx*66,bx=10+gap*(i+1)+bw*i;
+      return `<rect class="oszlop" style="--i:${i}" x="${bx}" y="${92-hh}" width="${bw}" height="${hh}" rx="3" fill="${SZIN6[i%6]}"/><text x="${bx+bw/2}" y="${88-hh}" font-size="6.5" font-weight="800" text-anchor="middle" fill="currentColor">${esc(x.ertek)}${esc(a.egyseg)}</text><text x="${bx+bw/2}" y="102" font-size="5.8" text-anchor="middle" fill="currentColor">${esc(x.cimke)}</text>`}).join("")}</svg>`},
+  kapcsolat:a=>{const n=a.agak.length,sor=(s,mx)=>{const sz=s.split(" ");let l1=sz[0],l2="";for(const w of sz.slice(1)){if((l1+" "+w).length<=mx&&!l2)l1+=" "+w;else l2+=(l2?" ":"")+w}return[l1,l2]};
+    const pos=a.agak.map((x,i)=>{const t=-Math.PI/2+i*2*Math.PI/n;return[100+Math.cos(t)*74,66+Math.sin(t)*42]});
+    return `<svg viewBox="0 0 200 132">${pos.map((p,i)=>`<line x1="100" y1="66" x2="${p[0]}" y2="${p[1]}" stroke="${SZIN6[i%6]}" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>`).join("")}
+     <g class="csomo" style="--i:0"><circle cx="100" cy="66" r="21" fill="var(--zold)"/><text x="100" y="62" font-size="11" text-anchor="middle" dominant-baseline="middle">${esc(a.kozep.ikon||"⭐")}</text><text x="100" y="75" font-size="5.6" font-weight="800" text-anchor="middle" fill="#06210f">${esc(a.kozep.szoveg.slice(0,16))}</text></g>
+     ${a.agak.map((x,i)=>{const p=pos[i],[l1,l2]=sor(x.szoveg,11);return `<g class="csomo" style="--i:${i+1}"><rect x="${p[0]-25}" y="${p[1]-14}" width="50" height="28" rx="9" fill="${SZIN6[i%6]}" fill-opacity=".95"/><text x="${p[0]}" y="${p[1]-5}" font-size="8" text-anchor="middle" dominant-baseline="middle">${esc(x.ikon)}</text><text x="${p[0]}" y="${p[1]+5}" font-size="5" font-weight="800" text-anchor="middle" fill="#14281d">${esc(l1)}</text>${l2?`<text x="${p[0]}" y="${p[1]+10.5}" font-size="5" font-weight="800" text-anchor="middle" fill="#14281d">${esc(l2)}</text>`:""}</g>`}).join("")}</svg>`},
+  tablazat:a=>`<table class="tbl"><thead><tr>${a.fejlec.map(x=>`<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${a.sorok.map(s=>`<tr>${s.map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`,
+  ora:a=>{const ho=((a.ora%12)+a.perc/60)*30,pe=a.perc*6;return `<svg viewBox="0 0 100 100" style="max-width:220px;margin:0 auto"><circle cx="50" cy="50" r="46" fill="#fff" stroke="var(--zold)" stroke-width="4"/>${[...Array(12)].map((_,i)=>{const t=(i+1)*Math.PI/6;return `<text x="${50+Math.sin(t)*36}" y="${50-Math.cos(t)*36}" font-size="9" font-weight="800" fill="#14281d" text-anchor="middle" dominant-baseline="middle">${i+1}</text>`}).join("")}
+    <line class="mutato" style="--a:${ho}deg" x1="50" y1="50" x2="50" y2="29" stroke="#14281d" stroke-width="4" stroke-linecap="round"/><line class="mutato" style="--a:${pe}deg;animation-delay:.2s" x1="50" y1="50" x2="50" y2="17" stroke="var(--piros)" stroke-width="2.4" stroke-linecap="round"/><circle cx="50" cy="50" r="3" fill="#14281d"/></svg><div class="kozep" style="font-weight:800;font-size:1.2rem">${String(a.ora).padStart(2,"0")}:${String(a.perc).padStart(2,"0")}</div>`},
+  rajz:a=>a.svg};
+function abraHtml(a){if(!a||!ABRA[a.tipus])return"";let k="";try{k=ABRA[a.tipus](a)}catch(e){return""}return `<div class="abra">${a.cim?`<div class="abracim">${esc(a.cim)}</div>`:""}${k}</div>`}
+const abraBe=it=>it&&it.abra?abraHtml(it.abra):"";
+/* ---------- egyenértékű válaszok felismerése (kóddal, AI nélkül) ---------- */
+const ROV={"i'm":"i am","you're":"you are","he's":"he is","she's":"she is","it's":"it is","we're":"we are","they're":"they are","i've":"i have","you've":"you have","we've":"we have","they've":"they have","don't":"do not","doesn't":"does not","didn't":"did not","can't":"cannot","won't":"will not","isn't":"is not","aren't":"are not","wasn't":"was not","weren't":"were not","haven't":"have not","hasn't":"has not","couldn't":"could not","wouldn't":"would not","shouldn't":"should not","let's":"let us","what's":"what is","that's":"that is","there's":"there is","where's":"where is","who's":"who is","how's":"how is","i'll":"i will","you'll":"you will","we'll":"we will","they'll":"they will","he'll":"he will","she'll":"she will","it'll":"it will","i'd":"i would","you'd":"you would","gonna":"going to","wanna":"want to"};
+const EGYSZO={colour:"color",favourite:"favorite",centre:"center",realise:"realize",grey:"gray",travelling:"traveling",organise:"organize",neighbour:"neighbor",behaviour:"behavior",theatre:"theater",licence:"license",mum:"mom",programme:"program",whilst:"while",analyse:"analyze",honour:"honor",flavour:"flavor",metre:"meter",litre:"liter",okay:"ok",yeah:"yes",yep:"yes",hey:"hello",hi:"hello",bye:"goodbye",zero:"0",one:"1",two:"2",three:"3",four:"4",five:"5",six:"6",seven:"7",eight:"8",nine:"9",ten:"10",eleven:"11",twelve:"12"};
+const HU_TOLTELEK=new Set(["a","az","egy","en","te","o","mi","ti","ok","on","maga","onok","is","hogy"]);
+const ekez=w=>w.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+function kanon(s,en){let t=String(s).toLowerCase().replace(/[’`´]/g,"'");
+  if(en)t=t.replace(/[a-z]+'[a-z]+/g,w=>ROV[w]||w).replace(/\bgood bye\b/g,"goodbye").replace(/\bthank you\b/g,"thanks").replace(/\bo\.k\.?/g,"ok").replace(/\bgonna\b/g,"going to").replace(/\bwanna\b/g,"want to");
+  let k=t.replace(/[.,!?;:"'„”()\-–]/g," ").split(/\s+/).filter(Boolean);
+  return en?k.map(w=>EGYSZO[w]||w):k}
+function lev(a,b){const m=a.length,n=b.length,d=[...Array(m+1)].map((_,i)=>[i,...Array(n).fill(0)]);for(let j=0;j<=n;j++)d[0][j]=j;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++){d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1])d[i][j]=Math.min(d[i][j],d[i-2][j-2]+1)}return d[m][n]}
+/* visszaad: "jo" | "ekezet" | "elfogad" (egyenértékű) | "elir" | null */
+function egyez(v,cel,mod){const ms=mod==="ms",en=mod===true||mod==="en",a=kanon(v,en),b=kanon(cel,en),J=x=>x.join(" ");if(!a.length||!b.length)return null;
+  if(J(a)===J(b))return"jo";
+  const ae=a.map(ekez),be=b.map(ekez);if(J(ae)===J(be))return"ekezet";
+  if(en&&J(a.filter(w=>w!=="please"))===J(b.filter(w=>w!=="please")))return"elfogad";
+  if(!en&&!ms){const af=ae.filter(w=>!HU_TOLTELEK.has(w)),bf=be.filter(w=>!HU_TOLTELEK.has(w));
+    if(af.length&&J(af)===J(bf))return"elfogad";if(af.length&&af.length===bf.length&&J([...af].sort())===J([...bf].sort()))return"elfogad"}
+  if(ae.length===be.length){let d=0;for(let i=0;i<ae.length;i++){if(ae[i]===be[i])continue;const m=lev(ae[i],be[i]),lim=be[i].length>=9?2:be[i].length>=5?1:0;if(m>lim)return null;d+=m}if(d>0&&d<=2)return"elir"}
+  return null}
+const RANG={jo:4,ekezet:3,elfogad:2,elir:1};
+function legjobbEgyez(v,jeloltek,en){let best=null,bc=null;for(const c of jeloltek){let r=egyez(v,c,en);if(r==='jo'&&norm(v)!==norm(c))r='elfogad';if(r&&(!best||RANG[r]>RANG[best])){best=r;bc=c}}return best?{r:best,cel:bc}:null}
+const norm=s=>String(s).toLowerCase().replace(/[.,!?;:"'’„”()\-–]/g," ").replace(/\s+/g," ").trim();
+const ekezet=s=>norm(s).normalize("NFD").replace(/[̀-ͯ]/g,"");
+function ezIs(it,v){if(it.gi===undefined)return"";const az="ez"+Date.now();
+  window[az]=async b=>{b.disabled=true;const r=await api("/api/cel/"+L.id+"/jelzes",{lecke:L.idx,gy:it.gi,valasz:v});
+    if(r.ok){b.parentNode.innerHTML=`<div class="halvany">📨 Elküldtem kivizsgálásra, köszönöm! Addig hibásnak számít; ha tényleg jó, később elfogadjuk, és szólok.</div>`;buborek("Köszi a jelzést, megnézzük!")}
+    else{b.disabled=false;toast(r.hiba||"Nem sikerült elküldeni")}};
+  return `<div style="margin-top:10px"><button class="gomb masodlagos" style="padding:9px 12px;font-size:.92rem" onclick="${az}(this)">🚩 Szerintem ez is helyes – jelzem</button><div class="halvany" style="margin-top:4px">Nem számít helyesnek, amíg meg nem vizsgáljuk. Ha jó volt, legközelebb már elfogadjuk.</div></div>`}
+function ird(it){$("#lt").innerHTML=`<div class="kerdes">${esc(it.kerdes)}</div>${abraBe(it)}<input id="be" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Írd ide…">`;
+  $("#ll").innerHTML=`<button class="gomb" id="eb">Ellenőrzés</button>`;const be=$("#be");be.focus();
+  const ell=()=>{const v=be.value;if(!v.trim())return;const hu=/[áéíóöőúüű]/i.test(it.valasz),mod=hu?false:(L.nyelv==="en"?true:(L.nyelv?"ms":false)),m=legjobbEgyez(v,[it.valasz,...(it.elfogad||[])],mod);
+    be.disabled=true;const jo=!!m;pont(jo,$("#eb"));
+    const uzi={jo:"",ekezet:"Majdnem – ügyelj az ékezetre: <b>"+esc(it.valasz)+"</b>",elfogad:"Ez is jó megoldás! 👍 A minta: <b>"+esc(it.valasz)+"</b>",elir:"Elírás – helyesen: <b>"+esc(m&&m.cel)+"</b>"};
+    visszajelzes(jo,it,jo?uzi[m.r]:"A helyes válasz: <b>"+esc(it.valasz)+"</b>"+ezIs(it,v))};
+  $("#eb").onclick=ell;be.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();ell()}}}
+function parosit(it){const bal=it.parok.map((p,i)=>({s:p[0],i})),jobb=it.parok.map((p,i)=>({s:p[1],i})).sort(()=>Math.random()-.5);let ki=null,hibak=0,kesz=0;
+  $("#lt").innerHTML=`<div class="kerdes">${esc(it.kerdes||"Párosítsd össze!")}</div><div class="pardoboz"><div id="pb">${bal.map(x=>`<div class="par" data-o="b" data-i="${x.i}" style="margin:8px 0">${esc(x.s)}</div>`).join("")}</div><div id="pj">${jobb.map(x=>`<div class="par" data-o="j" data-i="${x.i}" style="margin:8px 0">${esc(x.s)}</div>`).join("")}</div></div>`;
+  document.querySelectorAll(".par").forEach(e=>e.onclick=()=>{if(e.classList.contains("kesz"))return;
+    if(!ki||ki.dataset.o===e.dataset.o){ki&&ki.classList.remove("ki");ki=e;e.classList.add("ki");return}
+    if(ki.dataset.i===e.dataset.i){sfx.par();szikraEl(e,6);[ki,e].forEach(x=>x.classList.add("kesz"));kesz++;ki=null;
+      if(kesz===it.parok.length){const ok=hibak<=1;pont(ok);visszajelzes(ok,it,(hibak?`(${hibak} tévesztés)`:"")+`<div class="halvany" style="margin-top:6px">Helyes párok:<br>${it.parok.map(p=>"• "+esc(p[0])+" ↔ "+esc(p[1])).join("<br>")}</div>`)}}
+    else{hibak++;rosszHang();rez(50);const a=ki,b=e;[a,b].forEach(x=>x.classList.add("hiba"));ki.classList.remove("ki");ki=null;setTimeout(()=>[a,b].forEach(x=>x.classList.remove("hiba")),400);
+      if(hibak>=2){const t=document.querySelector(`.par[data-o="${a.dataset.o==="b"?"j":"b"}"][data-i="${a.dataset.i}"]:not(.kesz)`);if(t){t.classList.add("tipp");csiraA("tanit",2400);buborek("Segítek: ez a párja annak, amit először kijelöltél! 💡");setTimeout(()=>t.classList.remove("tipp"),2200)}}}})}
+function tabla(it){const hely=new Set(it.helyes),valasz=new Set(),egy=hely.size===1;let zarolt=false;
+  $("#lt").innerHTML=`<div class="kerdes">${esc(it.kerdes)}</div><div class="abra"><div class="tablabe" id="tb_abra">${tablaSvg(it,true)}</div></div><div class="halvany kozep" id="tb_inf">${egy?"Koppints a megfelelő mezőre.":"Jelöld meg az összes jó mezőt, aztán nyomd meg az Ellenőrzés gombot."}</div>`;
+  if(!egy)$("#ll").innerHTML=`<button class="gomb" id="eb" disabled>Ellenőrzés</button>`;
+  const ov=m=>document.querySelector(`#tb_abra [data-m="${m}"]`),szin=(m,c)=>{const e=ov(m);if(e)e.setAttribute("fill",c)};
+  const ertekel=()=>{zarolt=true;const jo=valasz.size===hely.size&&[...valasz].every(m=>hely.has(m));
+    hely.forEach(m=>szin(m,"rgba(34,184,92,.55)"));valasz.forEach(m=>{if(!hely.has(m))szin(m,"rgba(224,68,62,.6)")});
+    pont(jo,$("#eb"));visszajelzes(jo,it,jo?"":"A helyes mezők zölddel látszanak.")};
+  $("#tb_abra").onclick=e=>{const m=e.target.dataset&&e.target.dataset.m;if(!m||zarolt)return;
+    if(egy){valasz.add(m);szin(m,"rgba(93,184,255,.55)");ertekel();return}
+    if(valasz.has(m)){valasz.delete(m);szin(m,"transparent")}else{valasz.add(m);szin(m,"rgba(93,184,255,.55)")}
+    sfx.tap();$("#eb").disabled=valasz.size===0};
+  const eb=$("#eb");if(eb)eb.onclick=()=>{if(!zarolt&&valasz.size)ertekel()}}
+function rendez(it){const bank=it.elemek.map((s,i)=>({s,i})).sort(()=>Math.random()-.5);let valasz=[];
+  $("#lt").innerHTML=`<div class="kerdes">${esc(it.kerdes||"Tedd sorrendbe!")}</div>${abraBe(it)}<div class="szohely" id="sh"></div><div id="sb"></div>`;
+  $("#ll").innerHTML=`<button class="gomb" id="eb" disabled>Ellenőrzés</button>`;
+  const sh=$("#sh"),sb=$("#sb"),eb=$("#eb");let zarolt=false;sh.style.minHeight=(it.elemek.length>5?122:66)+"px";
+  const frissit=()=>{eb.disabled=valasz.length<it.elemek.length};
+  bank.forEach(x=>{const slot=document.createElement("span");slot.className="szo";slot.textContent=x.s;sb.appendChild(slot);x.slot=slot;
+    slot.onclick=()=>{if(zarolt||slot.classList.contains("ures"))return;
+      slot.classList.add("ures");const a=document.createElement("span");a.className="szo ujszo";a.textContent=x.s;sh.appendChild(a);x.a=a;valasz.push(x);frissit();
+      a.onclick=()=>{if(zarolt)return;a.remove();slot.classList.remove("ures");valasz=valasz.filter(y=>y!==x);frissit()}}});
+  eb.onclick=()=>{if(zarolt||eb.disabled)return;zarolt=true;const jo=norm(valasz.map(x=>x.s).join(" "))===norm(it.helyes.join(" "));pont(jo);visszajelzes(jo,it,jo?"":"A helyes sorrend: <b>"+esc(it.helyes.join(" "))+"</b>")}}
+let aud=null;
+function hangLejatszas(sz){Felolv.stop();csiraA("figyel",3500);const nk=(typeof L!=="undefined"&&L&&L.nyelv)||"en";const a=new Audio("/api/tts?h="+nk+"&v="+vhang(nk)+"&t="+encodeURIComponent(sz));aud=a;a.onerror=()=>{aud=null;Felolv.mond([{t:sz,l:nk}],"b")};a.play().catch(()=>toast("Nem sikerült lejátszani a hangot."))}
+function hallgat(it){$("#lt").innerHTML=`<div class="kerdes">${esc(it.kerdes||"Írd le, amit hallasz")}</div><button class="hang" id="hb">🔊</button><input id="be" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type what you hear…">`;
+  $("#ll").innerHTML=`<button class="gomb" id="eb">Ellenőrzés</button>`;$("#hb").onclick=()=>hangLejatszas(it.szoveg);if(Be.auto)setTimeout(()=>hangLejatszas(it.szoveg),250);
+  const be=$("#be"),ell=()=>{if(!be.value.trim())return;const m=egyez(be.value,it.szoveg,L.nyelv==="en"?true:"ms"),jo=!!m;be.disabled=true;pont(jo,$("#eb"));visszajelzes(jo,it,jo?(m==="jo"?"":"Majdnem – így hangzott: <b>"+esc(it.szoveg)+"</b>"):"Ezt mondta: <b>"+esc(it.szoveg)+"</b>"+ezIs(it,be.value))};
+  $("#eb").onclick=ell;be.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();ell()}}}
+function szamol(el,vege){if(!el)return;let n=0;const lep=Math.max(1,Math.round(vege/30));const t=setInterval(()=>{n=Math.min(vege,n+lep);el.textContent="+"+n+" XP";if(n>=vege){clearInterval(t);szikraEl(el,10)}else sfx.tap()},35)}
+function mondd(it){let rec=null,sz=[],ido=null,foglalt=false;
+  $("#lt").innerHTML=`<div class="kerdes">${esc(it.kerdes||"Mondd ki hangosan!")}</div><div class="flip" style="font-size:1.25rem">${esc(it.szoveg)}</div>
+   <div class="sor" style="justify-content:center;margin:12px 0"><button class="chip" id="mh" style="border:0">🔊 Meghallgatom</button></div>
+   <button class="hang" id="mikro" style="background:var(--piros);color:#fff;border-bottom-color:rgba(0,0,0,.25)">🎤</button><div class="halvany kozep" id="mst">Koppints a mikrofonra, mondd ki, majd koppints újra a leállításhoz.</div>`;
+  $("#ll").innerHTML=`<button class="gomb masodlagos" id="at">Átugrom (nem számít)</button>`;
+  $("#mh").onclick=()=>hangLejatszas(it.szoveg);$("#at").onclick=()=>{leall(true);L.i++;lepes()};
+  const mst=t=>{const e=$("#mst");if(e)e.textContent=t};
+  function leall(csend){clearTimeout(ido);if(rec&&rec.state!=="inactive"){rec.onstop=csend?null:rec.onstop;rec.stop()}rec&&rec.stream&&rec.stream.getTracks().forEach(t=>t.stop())}
+  $("#mikro").onclick=async()=>{if(foglalt)return;
+    if(rec&&rec.state==="recording"){clearTimeout(ido);rec.stop();return}
+    Felolv.stop();if(aud)aud.pause();
+    if(!navigator.mediaDevices||!window.isSecureContext){mst("A mikrofon csak biztonságos (https) kapcsolaton működik – ezen a címen nem érhető el. Használd az Átugrom gombot.");return}
+    let ms;try{ms=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){mst("Nem érem el a mikrofont – engedélyezd a böngészőben, vagy használd az Átugrom gombot.");return}
+    sz=[];rec=new MediaRecorder(ms);rec.ondataavailable=e=>e.data.size&&sz.push(e.data);
+    rec.onstop=async()=>{ms.getTracks().forEach(t=>t.stop());$("#mikro").classList.remove("rec");$("#mikro").textContent="🎤";
+      const blob=new Blob(sz,{type:rec.mimeType||"audio/webm"});if(blob.size<800){mst("Nagyon rövid volt – próbáld újra.");return}
+      foglalt=true;csiraA("gondol");buborek("Hallgatózom… ez 10–20 másodperc.");mst("⏳ Értékelem a kiejtésedet…");$("#mikro").style.opacity=.4;
+      const r=await fetch("/api/beszed?l="+encodeURIComponent((typeof L!=="undefined"&&L&&L.nyelv)||"en")+"&t="+encodeURIComponent(it.szoveg),{method:"POST",body:blob}).then(x=>x.json()).catch(()=>({hiba:"Hálózati hiba"}));
+      foglalt=false;$("#mikro").style.opacity=1;csiraA("idle");mst("");
+      if(r.hiba){mst(r.hiba+" Próbáld újra, vagy ugord át.");return}
+      if(r.ures){mst("Nem hallottam semmit – próbáld újra, közelebb a mikrofonhoz.");return}
+      const jo=r.pontos>=0.7;pont(jo,$("#mikro"));
+      const szavak=r.szavak.map(w=>`<span style="color:${w.ok?"var(--zold)":"var(--piros)"};font-weight:800">${esc(w.w)}</span>`).join(" ");
+      visszajelzes(jo,it,`${Math.round(r.pontos*100)}% egyezés<div style="margin-top:6px">${szavak}</div><div class="halvany" style="margin-top:6px">Ezt értettem: „${esc(r.hallott)}”<br>(A gép leírása a kiejtésed közelítése, nem tökéletes mérés.)</div>`)};
+    csiraA("figyel");rec.start();$("#mikro").classList.add("rec");$("#mikro").textContent="⏹";mst("🔴 Felvétel megy… koppints a leállításhoz.");ido=setTimeout(()=>{if(rec.state==="recording")rec.stop()},10000)}}
+async function vege(){Felolv.stop();const d=$("#lj");d.innerHTML=`<div class="test kozep" style="padding-top:80px">${CSIRA("nagy2","gondol")}<p>Mentem…</p></div>`;
+  const r=await api("/api/cel/"+L.id+"/kesz",{lecke:L.idx,helyes:L.helyes,osszes:Math.max(1,L.osszes),kombo_bonusz:L.bonusz,kartya_eredmeny:L.kr});
+  if(r.hiba){d.innerHTML=`<div class="test kozep"><p>${esc(r.hiba)}</p><button class="gomb" onclick="$('#lj').remove();fo()">Vissza</button></div>`;return}
+  const pr=Math.round(L.helyes/Math.max(1,L.osszes)*100);const csillag=pr===100?"🌟🌟🌟":pr>=70?"⭐⭐":"⭐";
+  d.innerHTML=`<div class="test kozep be-anim" style="padding-top:30px">${CSIRA("nagy2",pr>=50?"orul":"szomoru")}<h2>Lecke kész! ${csillag}</h2>
+   <div class="kartya"><div id="xpsz" style="font-size:2.2rem;font-weight:900;color:var(--arany)">+0 XP</div><div class="halvany">${L.helyes}/${L.osszes} helyes · legjobb kombó ×${L.max_kombo}</div></div>
+   <div class="sor" style="justify-content:center;gap:14px"><span class="chip"><span class="lang">🔥</span> ${r.sorozat} napos sorozat</span><span class="chip">⭐ ${r.allapot.szint}. szint</span></div>
+   ${r.uj_szint?`<div class="kartya" style="border-color:var(--arany)"><h3>🎊 Szintet léptél: ${r.uj_szint}.</h3></div>`:""}
+   ${r.kituzok.map(k=>`<div class="kartya" style="border-color:var(--zold)"><div style="font-size:2.4rem;display:inline-block;animation:forog .7s both">${k.emoji}</div><br><b>Új kitűző: ${esc(k.nev)}</b><div class="halvany">${esc(k.leiras)}</div></div>`).join("")}
+   </div><div class="lab"><button class="gomb" id="vb">${Sor.length?"Következő tanfolyam ▶":"Folytatás"}</button></div>`;
+  kabala(r.uj_szint?"uj_szint":r.kituzok.length?"kituzo":pr===100?"kesz_tokeletes":pr>=50?"kesz_jo":"hibas2");gyozelem();if(r.uj_szint)setTimeout(sfx.szint,700);if(r.kituzok.length)setTimeout(sfx.kituzo,r.uj_szint?1700:700);
+  szamol($("#xpsz"),r.xp);if(pr>=70||r.kituzok.length||r.uj_szint){konfetti();szikra(innerWidth/2,200,18)}
+  A=r.allapot;$("#vb").onclick=()=>{d.remove();if(Sor.length){inditLecke(Sor.shift(),"fo")}else window._honnan==="fo"?fo():cel(L.id)}}
+fo();
+</script>
+<script>
+/* Enter = a most éppen fő gomb (lecke: Tovább / Ellenőrzés / Folytatás; űrlap: elküldés; főoldal: Mai kör) */
+function fogoGomb(){const lat=e=>e&&!e.disabled&&e.offsetParent!==null;
+  if($("#lj")){const e=$("#tb")||$("#eb")||$("#vb")||$("#mb");if(lat(e))return e;const m=$("#mikro");return lat(m)?m:null}
+  const lap=$(".lap");if(lap){return [...lap.querySelectorAll(".gomb:not(.masodlagos)")].find(lat)||null}
+  const app=$("#app");if(!app)return null;
+  if($("#f_cim"))return [...app.querySelectorAll(".gomb")].filter(lat).pop()||null;
+  const joK=[...app.querySelectorAll(".tanfolyamok")];
+  if(joK.length){const kor=[...app.querySelectorAll(".gomb:not(.ac)")].find(e=>lat(e)&&/Mind a/.test(e.textContent));if(kor)return kor;const ac=[...app.querySelectorAll(".gomb.ac")].filter(lat);return ac.length===1?ac[0]:null}
+  return [...app.querySelectorAll(".gomb:not(.masodlagos):not(.veszely)")].find(lat)||null}
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Enter"||e.repeat||e.defaultPrevented||e.isComposing||e.altKey||e.metaKey||e.ctrlKey||e.shiftKey)return;
+  const t=e.target;if(t&&(t.tagName==="TEXTAREA"||t.tagName==="SELECT"||t.tagName==="BUTTON"||t.tagName==="A"||t.isContentEditable))return;
+  const g=fogoGomb();if(g){e.preventDefault();g.click()}});
+</script>
+<script type="module" src="/maskot3d.js" onerror="document.documentElement.classList.add('k3d-nincs')"></script>
+<script>setTimeout(()=>{if(document.querySelector(".csira:not([data-m])"))document.documentElement.classList.add("k3d-nincs")},8000)</script>
+<script>window.addEventListener("lapi-kattint",()=>{sfx.jo();rez(20)})</script>
+</body>
+</html>
