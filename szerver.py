@@ -824,7 +824,7 @@ def visszajelzes_allapot(vid: str, allapot: str, megjegyzes: str = "") -> dict:
             raise ValueError("nincs ilyen visszajelzés")
         e["allapot"], e["megjegyzes"] = allapot, str(megjegyzes)[:300]
         e["dontes_ido"] = datetime.now().isoformat(timespec="seconds")
-        e["latta"] = allapot in ("uj", "folyamatban") or not e["megjegyzes"]   # a tanulónak csak a megjegyzéses lezárást jelezzük
+        e["latta"] = allapot == "uj"   # minden feldolgozási lépésről (folyamatban / kész / elvetve) értesítjük a tanulót, megjegyzéssel vagy nélküle
         ir_g("visszajelzesek.json", lista)
     return e
 
@@ -1485,7 +1485,7 @@ def allapot() -> dict:
     mai = p["napi"].get(ma().isoformat(), {"xp": 0, "leckek": 0})
     return {"xp": p["xp"], **sz, "sorozat": hatso_sorozat(p), "fagyasztas": p["fagyasztas"], "mai": mai, "mai_xp_cel": 50, "beallitasok": p["beallitasok"],
             "jelzes_dontesek": [{"id": j["id"], "allapot": j["allapot"], "kerdes": j["kerdes"][:120], "felhasznalo": j["felhasznalo"], "megjegyzes": j.get("megjegyzes", "")} for j in jelzesek() if j["allapot"] != "uj" and not j.get("latta") and j.get("user", ADMIN_FELH) == aktualis()][:8],
-            "vissza_valaszok": [{"id": x["id"], "allapot": x["allapot"], "szoveg": x["szoveg"][:100], "megjegyzes": x.get("megjegyzes", "")} for x in visszajelzesek() if x.get("user") == aktualis() and x["allapot"] in ("kesz", "elvetve") and x.get("megjegyzes") and not x.get("latta")][:6],
+            "vissza_valaszok": [{"id": x["id"], "allapot": x["allapot"], "szoveg": x["szoveg"][:100], "megjegyzes": x.get("megjegyzes", "")} for x in visszajelzesek() if x.get("user") == aktualis() and x["allapot"] in ("folyamatban", "kesz", "elvetve") and not x.get("latta")][:6],
             "felhasznalo": {"az": aktualis(), **{k: v for k, v in (felh_meta(aktualis()) or {}).items() if k in ("nev", "emoji")}, "pin": bool((felh_meta(aktualis()) or {}).get("pin_hash")), "vendeg": aktualis() != ADMIN_FELH,
                              "vip": bool((felh_meta(aktualis()) or {}).get("vip")), "max_cel": felh_korlat()[0]}, "lan": lan_url(),
             "kituzok": [{"id": k, "emoji": KITUZOK[k][0], "nev": KITUZOK[k][1], "leiras": KITUZOK[k][2]} for k in p["kituzok"] if k in KITUZOK],
@@ -1825,7 +1825,7 @@ class Kezelo(BaseHTTPRequestHandler):
                 with JELZES_ZAR:
                     vl = visszajelzesek()
                     for x in vl:
-                        if x.get("user") == aktualis() and x["allapot"] in ("kesz", "elvetve"):
+                        if x.get("user") == aktualis() and x["allapot"] in ("folyamatban", "kesz", "elvetve"):
                             x["latta"] = True
                     ir_g("visszajelzesek.json", vl)
                 return self.kuld({"ok": True})
@@ -2055,7 +2055,7 @@ def admin_adatok(ora: int = 24) -> dict:
     m24 = admin_dash.minta_olvas(ADAT, 24)
     return {"ma": ma_s, "het_eleje": het, "admin": ADMIN_FELH, "felh": felh, "kolt": kk, "minoseg": minoseg, "gy": {"tipusok": {k: tuple(v) for k, v in tip.items()}, "gyanus": gyanus[:20]},
             "tanulsag": len(olvas_g("tanulsagok.json", [])), "vissza": {"nyitott": sum(1 for x in vj if x["allapot"] in ("uj", "folyamatban")), "ossz": len(vj)},
-            "jelzes": {"nyitott": sum(1 for x in jz if x["allapot"] == "uj"), "ossz": len(jz)}, "minta": minta, "magok": os.cpu_count() or 1,
+            "jelzes": {"nyitott": sum(1 for x in jz if x["allapot"] == "uj"), "ossz": len(jz)}, "minta": minta, "elso_minta": (admin_dash.minta_olvas(ADAT, 24 * 8) or [{"t": 0}])[0]["t"], "magok": os.cpu_count() or 1,
             "rendszer": {"van": bool(m24), "cpu_atlag": sum(r["cpu"] for r in m24) / max(1, len(m24)), "cpu_csucs": max([r["cpu"] for r in m24] or [0]),
                          "mem_csucs": max([r["mem"] for r in m24] or [0]), "temp_csucs": max([r["temp"] for r in m24 if r.get("temp") is not None] or [0])}}
 
@@ -2143,7 +2143,7 @@ def admin_vissza_oldal(mind: bool) -> str:
     kartyak = []
     for x in lista:
         kont = " · ".join(f"{e(k)}: {e(v)}" for k, v in x.get("kontextus", {}).items())
-        gomb = (f'<input id="m{x["id"]}" placeholder="megjegyzés a tanulónak (opcionális)" value="{e(x.get("megjegyzes", ""))}"><div>'
+        gomb = (f'<input id="m{x["id"]}" placeholder="megjegyzés a tanulónak (ha üres, kedves alapszöveg megy)" value="{e(x.get("megjegyzes", ""))}"><div>'
                 f'<button class="f" onclick="d(\'{x["id"]}\',\'folyamatban\')">🛠 Folyamatban</button> <button class="g" onclick="d(\'{x["id"]}\',\'kesz\')">✅ Kész</button> '
                 f'<button class="r" onclick="d(\'{x["id"]}\',\'elvetve\')">❌ Elvetve</button></div>')
         kartyak.append(f'''<div class="k {e(x["allapot"])}"><b>{e(KATEGORIAK.get(x["kategoria"], x["kategoria"]))}</b> · <b>{e(x["user"])}</b> · <small>{e(x["ido"])}</small> <span class="b">{e(x["allapot"])}</span>

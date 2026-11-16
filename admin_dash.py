@@ -139,7 +139,8 @@ def vonal(minta: list[dict], kulcs: str, egyseg: str, szin: str, fix_max: float 
         pontok = [(t, v, v) for t, v in pontok]
     mx = fix_max or _szep_max(max(p[2] for p in pontok) * 1.1)
     W, H, L, R, T, B = 640, 170, 38, 10, 10, 24
-    t0, t1 = pontok[0][0], pontok[-1][0]
+    t1 = time.time()
+    t0 = t1 - ora * 3600   # a kért időablak (az üres rész azt jelzi, hogy arra az időre még nincs mérés)
     x = lambda t: L + (t - t0) / max(1, t1 - t0) * (W - L - R)     # noqa: E731
     y = lambda v: T + (1 - min(v, mx) / mx) * (H - T - B)           # noqa: E731
     rács = "".join(f'<line x1="{L}" x2="{W - R}" y1="{y(mx * i / 4):.1f}" y2="{y(mx * i / 4):.1f}" class="g"/><text x="{L - 5}" y="{y(mx * i / 4) + 3.5:.1f}" class="t" text-anchor="end">{mx * i / 4:g}</text>' for i in range(5))
@@ -147,7 +148,7 @@ def vonal(minta: list[dict], kulcs: str, egyseg: str, szin: str, fix_max: float 
     cimkek = "".join(f'<text x="{x(t0 + (t1 - t0) * i / 4):.1f}" y="{H - 6}" class="t" text-anchor="middle">{datetime.fromtimestamp(t0 + (t1 - t0) * i / 4).strftime(fmt)}</text>' for i in range(5))
     vonal_pts = " ".join(f"{x(t):.1f},{y(v):.1f}" for t, v, _ in pontok)
     terulet = f"{x(t0):.1f},{y(0):.1f} {vonal_pts} {x(t1):.1f},{y(0):.1f}"
-    sav = (W - L - R) / len(pontok)
+    sav = max(2.0, (W - L - R) / max(1, ora * 60))   # egy perc széles sáv
     horog = "".join(f'<rect x="{x(t) - sav / 2:.1f}" y="{T}" width="{sav:.1f}" height="{H - T - B}" fill="transparent"><title>{datetime.fromtimestamp(t).strftime("%m-%d %H:%M")} · átlag {v:.1f}{egyseg} · csúcs {m:.1f}{egyseg}</title></rect>' for t, v, m in pontok)
     return (f'<svg viewBox="0 0 {W} {H}" class="vz" role="img" aria-label="{e(kulcs)}">{rács}{cimkek}<polygon points="{terulet}" fill="var({szin})" opacity=".14"/>'
             f'<polyline points="{vonal_pts}" fill="none" stroke="var({szin})" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>{horog}</svg>')
@@ -282,6 +283,9 @@ def rendszer(D: dict, tok: str, ora: int) -> str:
     if not mi:
         return szuro + '<div class="kart"><div class="ures">A mérés most indult – percenként gyűlik az adat, nézz vissza pár perc múlva.</div></div>'
     u = mi[-1]
+    gyujt = (time.time() - D["elso_minta"]) / 3600 if D.get("elso_minta") else 0
+    megj = (f'<div class="kart kicsi">ℹ️ A mérés {gyujt:.1f} órája gyűlik, ezért a {ora} órás nézetben még csak a jobb oldali szakaszon van adat – a bal oldali üres rész azt az időt jelzi, amikor még nem mértünk.</div>'
+            if gyujt and gyujt < ora * 0.95 else "")
     mag = D["magok"]
     def ertek(k):  # noqa: ANN001
         return [r[k] for r in mi if r.get(k) is not None]
@@ -298,7 +302,7 @@ def rendszer(D: dict, tok: str, ora: int) -> str:
         csempe("Tanoda memóriája", f'{u["rss"]} MB', "a szerver-folyamat"),
     ])
     d = lambda k, cim, egy, szin, fix=None: f'<div class="kart"><h2>{cim}</h2>{vonal(mi, k, egy, szin, fix, ora)}</div>'  # noqa: E731
-    return (szuro + f'<div class="racs">{cs}</div><div class="dupla">{d("cpu", "CPU-használat (%)", "%", "--s1", 100)}{d("l1", "Terhelés (1 perces load)", "", "--s2")}'
+    return (szuro + megj + f'<div class="racs">{cs}</div><div class="dupla">{d("cpu", "CPU-használat (%)", "%", "--s1", 100)}{d("l1", "Terhelés (1 perces load)", "", "--s2")}'
             f'{d("mem", "Memória-használat (%)", "%", "--s3", 100)}{d("temp", "Hőmérséklet (°C)", " °C", "--s2")}{d("claude", "Egyszerre futó AI-hívások", "", "--s1")}{d("disk", "Lemez-foglaltság (%)", "%", "--s3", 100)}</div>'
             f'<p class="kicsi">Mérés percenként · {len(mi)} minta ebben az időszakban · az érték fölé állva a pontos idő és csúcs látszik. 7 napig őrzi.</p>')
 
