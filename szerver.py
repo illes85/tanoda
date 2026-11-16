@@ -465,7 +465,7 @@ Gyengén ismert elemek, amiket érdemes beleszőni: {gyenge}
 Időkeret: kb. {perc} perc → {db} gyakorlat.
 {nyelvi}
 
-Írj lényegre törő, barátságos, játékos hangvételű tartalmat. Az „bevezeto” legfeljebb 120 szó, markdown (félkövér, rövid lista), konkrét példával – ez a mini-tanítás. Utána {db} változatos gyakorlat, könnyűtől a nehezebbig; legyen közte felismerés (teszt), felidézés (ird) és alkalmazás.
+Írj lényegre törő, barátságos, játékos hangvételű tartalmat. Az „bevezeto” legfeljebb 120 szó, markdown (félkövér, rövid lista), konkrét példával – ez a mini-tanítás. Utána {db} változatos gyakorlat, könnyűtől a nehezebbig, és használd a különféle típusokat (legalább 3-4 fajtát, köztük 1-2 gyors igazhamis, 1-2 kitolt vagy hibakereso, ha a témához illik); legyen közte felismerés (teszt), felidézés (ird) és alkalmazás.
 A hibás válaszlehetőségek legyenek hihetők. Minden gyakorlathoz írj rövid „magyarazat”-ot (miért az a helyes).
 
 Gyakorlat-típusok (pontosan ezek a mezők):
@@ -473,6 +473,9 @@ Gyakorlat-típusok (pontosan ezek a mezők):
 {{"tipus":"ird","kerdes":"…","valasz":"a helyes válasz","elfogad":["más elfogadható alak"],"magyarazat":"…"}}
 {{"tipus":"parosit","kerdes":"Párosítsd össze!","parok":[["bal","jobb"],["bal","jobb"],["bal","jobb"],["bal","jobb"]],"magyarazat":"…"}}
 {{"tipus":"rendez","kerdes":"Tedd sorrendbe a szavakat!","elemek":["szavak","összekeverve"],"helyes":["a","helyes","sorrend"],"magyarazat":"…"}}
+{{"tipus":"igazhamis","kerdes":"Egy rövid, egyértelmű állítás","helyes":true,"magyarazat":"…"}}   (gyors, időre menő kör: igaz vagy hamis; az állítás legyen 100%-ig egyértelmű, ne csapda-szőrszálhasogatás; a „helyes” true/false)
+{{"tipus":"kitolt","kerdes":"Egészítsd ki a mondatot!","mondat":"mondat pontosan egy ___ hellyel","valasz":"a hiányzó szó","lehetosegek":["a hiányzó szó","hihető rossz","hihető rossz"],"magyarazat":"…"}}   (3-4 lehetőség, a „valasz” szerepeljen közte, pontosan egy hely legyen)
+{{"tipus":"hibakereso","kerdes":"Melyik szó hibás a mondatban?","szavak":["a","mondat","szavai","egyenként"],"helyes":2,"javitas":"a helyes alak","magyarazat":"…"}}   (a mondatban PONTOSAN EGY hiba legyen; a „helyes” a hibás szó 0-tól számolt indexe)
 {hallgat}
 {abra_leiras}
 {miniapp_leiras}
@@ -1165,6 +1168,7 @@ def minoseg_naplo(c: dict, l: dict, elvetett: int, lektor_hibak: list, maradt: i
 
 
 LEKTOR_PROMPT = """Te egy szigorú szaklektor és tesztfeladat-ellenőr vagy. Alább egy tanulóapp kész leckéje (JSON). Keresd meg a TÉNYBELI és LOGIKAI hibákat:
+- igazhamis: az állítás igazságértéke nem egyezik a „helyes” mezővel vagy kétértelmű; kitolt: nem pontosan EGY lehetőség ad helyes mondatot (több is jó, vagy a „valasz” rossz); hibakereso: nincs hiba, több hiba van, vagy a „helyes” index/„javitas” téves;
 - a teszt „helyes” indexe nem a valóban helyes válaszra mutat, vagy a helyes válasz hiányzik a lehetőségek közül, vagy több válasz is helyes;
 - a kérdés, az ábra, a magyarázat vagy a bevezető ellentmond egymásnak vagy a valóságnak (téves tény, téves szabály, rossz szám);
 - az ábra nem azt mutatja, amit a szöveg állít; a párosítás nem egyértelmű; az „ird” válasz nem az egyetlen helyes;
@@ -1247,7 +1251,7 @@ def lecke_keszit(cid: str, idx: int) -> None:
             tema=l.get("tema", ""), kulcs=", ".join(l.get("kulcsfogalmak", [])) or "-",
             elozo="; ".join(x["cim"] for x in ls[max(0, idx - 4):idx]) or "ez az első lecke",
             gyenge="; ".join(gyenge_kartyak(c)) or "még nincs", perc=c["perc"], db=db, nyelvi=nyelvi, hallgat=hallgat, abra_leiras=ABRA_LEIRAS, miniapp_leiras=MINIAPP_LEIRAS, tanulsagok=tanulsag_szoveg(c)), MODELL, "low", timeout=420)
-        gy = [g for g in adat.get("gyakorlatok", []) if isinstance(g, dict) and g.get("tipus") in ("teszt", "ird", "parosit", "rendez", "hallgat", "mondd", "tabla")]
+        gy = [g for g in adat.get("gyakorlatok", []) if isinstance(g, dict) and g.get("tipus") in ("teszt", "ird", "parosit", "rendez", "hallgat", "mondd", "tabla", "igazhamis", "kitolt", "hibakereso")]
         nyers = len(gy)
         gy = [g for g in gy if jo_gyakorlat(g, en)]
         for g in gy:  # a gyakorlatok ábrái: csak az ellenőrzött marad
@@ -1321,6 +1325,15 @@ def jo_gyakorlat(g: dict, en: bool) -> bool:
             return len(v) >= 2 and all(v) and len(set(v)) == len(v) and 0 <= int(g["helyes"]) < len(v) and bool(g["kerdes"])   # üres vagy ismétlődő válaszlehetőség → hibás
         if t == "ird":
             return bool(g["kerdes"]) and bool(str(g["valasz"]).strip())
+        if t == "igazhamis":
+            return isinstance(g["helyes"], bool) and bool(str(g["kerdes"]).strip()) and len(str(g["kerdes"])) <= 220
+        if t == "kitolt":
+            lv = [re.sub(r"\W+", " ", str(x).lower()).strip() for x in g["lehetosegek"]]
+            va = re.sub(r"\W+", " ", str(g["valasz"]).lower()).strip()
+            return str(g["mondat"]).count("___") == 1 and 3 <= len(lv) <= 5 and all(lv) and len(set(lv)) == len(lv) and va in lv   # a helyes szó szerepeljen, ne legyen ismétlődő opció
+        if t == "hibakereso":
+            sz = [str(x).strip() for x in g["szavak"]]
+            return 3 <= len(sz) <= 14 and all(sz) and 0 <= int(g["helyes"]) < len(sz) and bool(str(g["javitas"]).strip()) and str(g["javitas"]).strip().lower() != sz[int(g["helyes"])].lower()
         if t == "parosit":
             return parosit_jo(g)
         if t == "rendez":

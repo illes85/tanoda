@@ -59,6 +59,9 @@ a{color:var(--kek)}
 #lj .lab{padding:12px 16px 16px;max-width:760px;width:100%;margin:0 auto}
 .kerdes{font-size:1.25rem;font-weight:800;margin:10px 0 16px}
 .opcio{display:block;width:100%;text-align:left;background:var(--kartya);border:2px solid var(--vonal);border-bottom-width:4px;border-radius:14px;padding:13px 14px;margin:9px 0;font-weight:600}
+.sor .opcio{flex:1;width:auto}.idosav{height:10px;background:var(--vonal);border-radius:6px;overflow:hidden;margin:10px 0}.idosav i{display:block;height:100%;width:100%;background:var(--zold);border-radius:6px}.idosav.sur i{background:var(--piros)}
+.kitolt{font-size:1.25rem;font-weight:700;margin:14px 0;text-align:center}.lyuk{display:inline-block;min-width:70px;border-bottom:3px solid var(--arany);margin:0 4px;padding:0 6px}.lyuk.jo{color:var(--zold);border-color:var(--zold)}.lyuk.rossz{color:var(--piros);border-color:var(--piros)}
+.szavak{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0}.szochip{background:var(--kartya);border:2px solid var(--vonal);border-bottom-width:4px;border-radius:12px;padding:10px 13px;font-size:1.1rem;font-weight:700}.szochip.jo{border-color:var(--zold);background:rgba(47,209,107,.18)}.szochip.rossz{border-color:var(--piros)}
 .opcio.jo{border-color:var(--zold);background:var(--jo-bg)}.opcio.rossz{border-color:var(--piros);background:var(--rossz-bg)}
 .vissza{border-radius:16px;padding:14px;margin-top:14px;font-weight:600}
 .vissza.jo{background:var(--jo-bg);border:1px solid var(--zold)}.vissza.rossz{background:var(--rossz-bg);border:1px solid var(--piros)}
@@ -450,7 +453,23 @@ let L=null;
 async function inditLecke(id,honnan){window._honnan=honnan||"cel";const r=await api("/api/cel/"+id+"/lecke",{});if(r.hiba){toast(r.hiba);return}
   if(r.kesz)return lejatszo(id,r);
   varakozas(r.munka,"A mai leckét írom…",["Összeállítom a gyakorlatokat…","Kitalálom a jó csapdakérdéseket…","Beleszövöm, amit nehezen jegyzel meg…"],async()=>{const q=await api("/api/cel/"+id+"/lecke",{lecke:r.lecke});q.kesz?lejatszo(id,q):toast(q.hiba||"Hiba")},`cel('${id}')`)}
-function lejatszo(id,r){
+/* ---------- napi hangulat: kódból igazítja a lecke hosszát, sorrendjét és tempóját (AI nélkül) ---------- */
+const HANGULATOK=[["faradt","😴","Fáradt vagyok","rövidebb, könnyebb, nyugodt tempó"],["jo","🙂","Jól vagyok","a megszokott lecke"],["lendulet","🚀","Tele vagyok lendülettel","nehezebbek előre, szoros idő, extra pont"]];
+const NEHEZ_TIP=["ird","tabla","mondd","hibakereso"],KONNYU_TIP=["teszt","igazhamis","kitolt","parosit"];
+function hangulatMa(){try{const h=JSON.parse(localStorage.tanoda_hangulat||"null");return h&&h.nap===new Date().toDateString()?h.v:null}catch(e){return null}}
+function hangulatIgazit(L){const h=L.hangulat;if(!h||h==="jo")return;const fej=L.items.filter(x=>x.t==="intro"||x.t==="felidez"),gy=L.items.filter(x=>x.t!=="intro"&&x.t!=="felidez");
+  const konnyu=gy.filter(x=>!NEHEZ_TIP.includes(x.t)),nehez=gy.filter(x=>NEHEZ_TIP.includes(x.t));
+  if(h==="faradt"){const marad=Math.max(0,Math.max(5,Math.ceil(gy.length*.7))-konnyu.length);L.items=[...fej,...konnyu,...nehez.slice(0,marad)]}
+  else L.items=[...fej,...konnyu.slice(0,Math.ceil(konnyu.length/2)),...nehez,...konnyu.slice(Math.ceil(konnyu.length/2))]}
+/* menet közben: két hiba után könnyebb, hosszú sorozat után nehezebb feladat jön előre */
+function adaptiv(){const r=L.items.slice(L.i+1);if(r.length<2)return;let k=-1;
+  if((L.rosszSor||0)>=2&&!KONNYU_TIP.includes(r[0].t))k=r.findIndex(x=>KONNYU_TIP.includes(x.t));
+  else if(L.kombo>=4&&L.hangulat!=="faradt"&&!NEHEZ_TIP.includes(r[0].t))k=r.findIndex(x=>NEHEZ_TIP.includes(x.t));
+  if(k>0){const [x]=r.splice(k,1);r.unshift(x);L.items=[...L.items.slice(0,L.i+1),...r]}}
+function lejatszo(id,r){const h=hangulatMa();if(h)return lejatszo0(id,r,h);
+  const d=document.createElement("div");d.className="lap";d.innerHTML=`<div class="kozep"><h3>Hogy érzed magad ma?</h3><div class="halvany">Ehhez igazítom a leckét.</div><div style="height:10px"></div>${HANGULATOK.map(([k,e,n,m])=>`<button class="opcio" data-k="${k}" style="text-align:center"><span style="font-size:1.6rem">${e}</span> <b>${n}</b><div class="halvany">${m}</div></button>`).join("")}</div>`;
+  document.body.appendChild(d);d.querySelectorAll(".opcio").forEach(b=>b.onclick=()=>{localStorage.tanoda_hangulat=JSON.stringify({nap:new Date().toDateString(),v:b.dataset.k});d.remove();lejatszo0(id,r,b.dataset.k)})}
+function lejatszo0(id,r,hangulat){
   if(r.folyamat&&r.folyamat.i>0&&!r._d){const d=document.createElement("div");d.className="lap";
     d.innerHTML=`<div><div class="kozep">${CSIRA("nagy2")}</div><h3 class="kozep">Félbehagytad ezt a leckét</h3><p class="halvany kozep">${esc(r.cim)} – ${r.folyamat.i}. lépésnél tartottál (akár másik eszközön is). Folytatod ott?</p>
      <button class="gomb" id="fk">↩ Folytatom</button><div style="height:10px"></div><button class="gomb masodlagos" id="fu">Újrakezdem</button></div>`;
@@ -459,6 +478,7 @@ function lejatszo(id,r){
   ((r._d==="f"&&r.folyamat?r.folyamat.esedekes:null)||r.esedekes||[]).forEach(k=>items.push({t:"felidez",id:k.id,elol:k.elol,hatul:k.hatul}));
   t.gyakorlatok.forEach((g,gi)=>items.push({t:g.tipus,gi,...g}));
   L={id,idx:r.lecke,items,i:0,helyes:0,osszes:0,kombo:0,max_kombo:0,bonusz:0,kr:{},nyelv:r.nyelv,szegmensek:r.szegmensek||[],esedekes:(r._d==="f"&&r.folyamat?r.folyamat.esedekes:null)||r.esedekes||[]};
+  L.hangulat=hangulat;hangulatIgazit(L);
   L.mini=t.miniapp||null;if(L.mini&&L.mini.allapot==="keszul")miniappFigyel();
   if(r._d==="f"&&r.folyamat){const f=r.folyamat;Object.assign(L,{i:Math.min(f.i,items.length-1),helyes:f.helyes,osszes:f.osszes,kombo:f.kombo,max_kombo:f.max_kombo,bonusz:f.bonusz,kr:f.kr||{}})}
   let d=$("#lj");if(!d){d=document.createElement("div");d.id="lj";document.body.appendChild(d)}
@@ -514,16 +534,16 @@ function visszajelzesNyit(){const k={};try{const lj=document.querySelector("#lj"
 function kilep(){if(confirm("Kilépsz? A haladásod mentve marad, bármelyik eszközön folytathatod.")){Felolv.stop();Sor=[];$("#lj")?.remove();window._honnan==="fo"?fo():cel(L.id)}}
 function lepes(){const it=L.items[L.i];
   if(!it)return vege();
-  Felolv.stop();Felolv.vege=null;
+  Felolv.stop();Felolv.vege=null;clearInterval(window._idoT);
   $("#pr").style.width=Math.round(L.i/L.items.length*100)+"%";
   const ab=$("#anyagb");if(ab)ab.style.visibility=L.i>0?"visible":"hidden";
   const lt=$("#lt");lt.classList.remove("be-anim");void lt.offsetWidth;lt.classList.add("be-anim");lt.scrollTop=0;
   if(L.i>0){sfx.lapoz();fetch("/api/cel/"+L.id+"/folyamat",{method:"POST",headers:{"Content-Type":"application/json"},keepalive:true,
     body:JSON.stringify({lecke:L.idx,i:L.i,helyes:L.helyes,osszes:L.osszes,kombo:L.kombo,max_kombo:L.max_kombo,bonusz:L.bonusz,kr:L.kr,esedekes:L.esedekes})}).catch(()=>{})}
-  if(it.t!=="intro")buborek(veletlen({felidez:["Mire emlékszel?","Ezt már láttuk!"],teszt:["Gondolkodj nyugodtan!","Melyik lehet?"],ird:["Írd le a saját szavaiddal!","Menni fog!"],parosit:["Keresd a párját!","Kezdd a könnyebbekkel!"],rendez:["Rakd sorba!","Melyik jön először?"],hallgat:["Figyelj jól!","Hallgasd meg többször is!"],mondd:["Mondd ki hangosan!","Nem baj, ha nem tökéletes!"],tabla:["Nézd meg jól a táblát!","Gondold végig a lépést!"]}[it.t]||["Menni fog!"]));
-  ({intro,felidez,teszt,ird,parosit,rendez,hallgat,mondd,tabla})[it.t](it);
-  if(it.t==="intro"&&L.i===0)kabala("lecke_indul");else if(["ird","mondd","tabla"].includes(it.t)&&Math.random()<.6)kabala("nehez")}
-const tov=(felirat="Tovább")=>{$("#ll").innerHTML=`<button class="gomb" id="tb">${felirat}</button>`;$("#tb").onclick=()=>{L.i++;lepes()}};
+  if(it.t!=="intro")buborek(veletlen({felidez:["Mire emlékszel?","Ezt már láttuk!"],teszt:["Gondolkodj nyugodtan!","Melyik lehet?"],ird:["Írd le a saját szavaiddal!","Menni fog!"],parosit:["Keresd a párját!","Kezdd a könnyebbekkel!"],rendez:["Rakd sorba!","Melyik jön először?"],hallgat:["Figyelj jól!","Hallgasd meg többször is!"],mondd:["Mondd ki hangosan!","Nem baj, ha nem tökéletes!"],igazhamis:["Gyorsan, de gondolkodj!","Igaz vagy hamis?"],kitolt:["Melyik szó illik a helyére?","Töltsd ki a hiányt!"],hibakereso:["Keresd meg a hibát!","Éles szem kell hozzá!"],tabla:["Nézd meg jól a táblát!","Gondold végig a lépést!"]}[it.t]||["Menni fog!"]));
+  ({intro,felidez,teszt,ird,parosit,rendez,hallgat,mondd,tabla,igazhamis,kitolt,hibakereso})[it.t](it);
+  if(it.t==="intro"&&L.i===0)csiraA(L.hangulat==="faradt"?"nyujtozik":L.hangulat==="lendulet"?"edz":"integet",1900);else if(["ird","mondd","tabla","hibakereso"].includes(it.t)&&Math.random()<.6)kabala("nehez")}
+const tov=(felirat="Tovább")=>{$("#ll").innerHTML=`<button class="gomb" id="tb">${felirat}</button>`;$("#tb").onclick=()=>{adaptiv();L.i++;lepes()}};
 function pont(jo,el){L.osszes++;
   if(jo){L.helyes++;L.kombo++;L.max_kombo=Math.max(L.max_kombo,L.kombo);
     if(L.kombo>=3){L.bonusz+=Math.min(6,(L.kombo-2)*2);const k=document.createElement("div");k.className="kombo";k.textContent="🔥 ×"+L.kombo;document.body.appendChild(k);setTimeout(()=>k.remove(),900);sfx.kombo(L.kombo)}
@@ -545,6 +565,30 @@ function felidez(it){$("#lt").innerHTML=`<div class="halvany">🃏 Felidézés �
   $("#mb").onclick=()=>{$("#fl").innerHTML=`<div><div class="halvany" style="font-weight:400">${esc(it.elol)}</div><div style="margin-top:8px">${esc(it.hatul)}</div></div>`;
     $("#ll").innerHTML=`<div class="sor"><button class="gomb veszely" id="nb">Nem tudtam</button><button class="gomb" id="jb">Tudtam ✓</button></div>`;
     const v=ok=>{L.kr[it.id]=ok;ok?joHang():rosszHang();L.i++;lepes()};$("#nb").onclick=()=>v(false);$("#jb").onclick=()=>v(true)}}
+/* ---------- új gyakorlattípusok: igaz/hamis (időre), kitöltős, hibakereső ---------- */
+const IDO_MP=12;
+function idoSav(mp,lejar){clearInterval(window._idoT);const t0=Date.now(),sv=$("#idosav");if(!sv)return;
+  window._idoT=setInterval(()=>{const e=(Date.now()-t0)/1000,m=Math.max(0,1-e/mp);sv.firstElementChild.style.width=(m*100)+"%";sv.classList.toggle("sur",m<.35);
+    if(m<=0){clearInterval(window._idoT);lejar()}},100);return t0}
+function igazhamis(it){const faradt=L.hangulat==="faradt",t0=Date.now();
+  $("#lt").innerHTML=`<div class="halvany">⚡ Gyors kör: igaz vagy hamis?</div><div class="kerdes">${esc(it.kerdes)}</div>${abraBe(it)}${faradt?"":`<div class="idosav" id="idosav"><i></i></div>`}
+   <div class="sor" style="gap:10px"><button class="opcio" data-v="1" style="text-align:center">✅ Igaz</button><button class="opcio" data-v="0" style="text-align:center">❌ Hamis</button></div>`;
+  const vege=(v,b)=>{clearInterval(window._idoT);const jo=v!==null&&(v===1)===!!it.helyes,mp=(Date.now()-t0)/1000;
+    document.querySelectorAll(".opcio").forEach(x=>{x.disabled=true;if((+x.dataset.v===1)===!!it.helyes)x.classList.add("jo")});if(b&&!jo)b.classList.add("rossz");
+    pont(jo,b);if(jo&&!faradt&&mp<5){L.bonusz+=1;kabala("gyors")}
+    visszajelzes(jo,it,v===null?"⏰ Lejárt az idő. ":`<b>${it.helyes?"Igaz":"Hamis"}</b> volt. `)};
+  document.querySelectorAll(".opcio").forEach(b=>b.onclick=()=>vege(+b.dataset.v,b));
+  if(!faradt)idoSav(L.hangulat==="lendulet"?8:IDO_MP,()=>vege(null,null))}
+function kitolt(it){const o=it.lehetosegek.map((v,i)=>i).sort(()=>Math.random()-.5),r=it.mondat.split("___");
+  $("#lt").innerHTML=`<div class="kerdes">${esc(it.kerdes)}</div>${abraBe(it)}<div class="kitolt">${esc(r[0])}<span class="lyuk" id="lyuk">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>${esc(r[1]||"")}</div>`+o.map(i=>`<button class="opcio" data-i="${i}" style="text-align:center">${esc(it.lehetosegek[i])}</button>`).join("");
+  document.querySelectorAll(".opcio").forEach(b=>b.onclick=()=>{const v=it.lehetosegek[+b.dataset.i],jo=norm(v)===norm(it.valasz);
+    $("#lyuk").textContent=v;$("#lyuk").classList.add(jo?"jo":"rossz");
+    document.querySelectorAll(".opcio").forEach(x=>{x.disabled=true;if(norm(it.lehetosegek[+x.dataset.i])===norm(it.valasz))x.classList.add("jo")});if(!jo)b.classList.add("rossz");pont(jo,b);visszajelzes(jo,it,jo?"":`A helyes: <b>${esc(it.valasz)}</b>. `)})}
+function hibakereso(it){
+  $("#lt").innerHTML=`<div class="kerdes">${esc(it.kerdes)}</div>${abraBe(it)}<div class="szavak">${it.szavak.map((w,i)=>`<button class="szochip" data-i="${i}">${esc(w)}</button>`).join(" ")}</div><div class="halvany" style="margin-top:8px">🔎 Koppints a hibás szóra!</div>`;
+  document.querySelectorAll(".szochip").forEach(b=>b.onclick=()=>{const jo=+b.dataset.i===+it.helyes;
+    document.querySelectorAll(".szochip").forEach(x=>{x.disabled=true;if(+x.dataset.i===+it.helyes){x.classList.add("jo");if(!jo||true)x.title=it.javitas}});if(!jo)b.classList.add("rossz");
+    pont(jo,b);visszajelzes(jo,it,`A hibás szó: <b>${esc(it.szavak[+it.helyes])}</b> → <b>${esc(it.javitas)}</b>. `)})}
 function teszt(it){const sorrend=it.valaszok.map((v,i)=>i).sort(()=>Math.random()-.5);
   $("#lt").innerHTML=`<div class="kerdes">${esc(it.kerdes)}</div>${abraBe(it)}`+sorrend.map(i=>`<button class="opcio" data-i="${i}">${esc(it.valaszok[i])}</button>`).join("");
   [...document.querySelectorAll(".opcio")].forEach(b=>b.onclick=()=>{const i=+b.dataset.i,jo=i===+it.helyes;
