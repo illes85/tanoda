@@ -880,19 +880,34 @@ def tts_fajl(szoveg: str, h: str = "en", v: str = "") -> Path | str:
     return f
 
 
+def lecke_hangjai(c: dict, lk: dict) -> list[tuple[str, str]]:
+    """A lecke összes felolvasandó szövege (szöveg, nyelv): bevezető, ábra-feliratok (koppintásra), hallgat/mondd mondatok."""
+    kod = c["terv"].get("nyelv", "")
+    hangos = kod == "en" or (bool(kod) and bool(hangcsomag.modell_nev(kod)))
+    jel = kod if hangos else "hu"
+    ki: list[tuple[str, str]] = [(sz["t"], sz["l"]) for sz in beszed_szegmensek(lk.get("bevezeto", ""), kod)]
+    abrak = [*(lk.get("abrak") or []), *[g.get("abra") for g in lk.get("gyakorlatok", []) if g.get("abra")]]
+    for a in abrak:
+        if isinstance(a, dict) and a.get("tipus") == "jelenet":
+            ki += [(e["felirat"], jel) for e in a.get("elemek", []) if isinstance(e, dict) and e.get("felirat")]
+    for g in lk.get("gyakorlatok", []):
+        if g.get("tipus") in ("hallgat", "mondd") and g.get("szoveg") and kod:
+            ki.append((g["szoveg"], kod))
+    lattuk, ut = set(), []
+    for t, l in ki:
+        if (t, l) not in lattuk and t.strip():
+            lattuk.add((t, l))
+            ut.append((t, l))
+    return ut
+
+
 def elorenderel(cid: str, idx: int) -> None:
-    """A lecke bevezetőjének felolvasását a háttérben előre legyártja, hogy induláskor azonnal szóljon."""
+    """A lecke ÖSSZES hangját a háttérben előre legyártja (gyorsítótárba), hogy induláskor és közben azonnal szóljon."""
     try:
         c = cel_olvas(cid)
         hu, en = hang_valasztas()
-        kod = c["terv"].get("nyelv", "")
-        lk = c["leckek"][str(idx)]
-        for sz in beszed_szegmensek(lk["bevezeto"], kod):
-            tts_fajl(sz["t"], sz["l"], en if sz["l"] == "en" else hu)
-        if kod:   # a „hallgat” gyakorlatok mondatai is: az első kérdésnél se legyen várakozás
-            for g in lk.get("gyakorlatok", []):
-                if g.get("tipus") == "hallgat" and g.get("szoveg"):
-                    tts_fajl(g["szoveg"], "en" if kod == "en" else kod, en if kod == "en" else "")
+        for t, l in lecke_hangjai(c, c["leckek"][str(idx)]):
+            tts_fajl(t, l, en if l == "en" else hu if l == "hu" else "")
     except Exception:  # noqa: BLE001 – csak gyorsítás
         pass
 
@@ -1230,6 +1245,8 @@ def sakk_fen(x) -> str | None:
 
 def lecke_keszit(cid: str, idx: int) -> None:
     c = cel_olvas(cid)
+    if str(idx) in c.get("leckek", {}):
+        return   # ami egyszer elkészült, azt nem generáljuk újra (újat csak a „lecke_ujra” kér, ami előbb törli)
     ls = leckek_lista(c)
     l = ls[idx]
     db = max(6, min(12, round(int(c["perc"]) * 0.75)))
@@ -1278,6 +1295,8 @@ def lecke_keszit(cid: str, idx: int) -> None:
     if len(gy) < 3:
         raise RuntimeError("A lecke gyakorlatai használhatatlanok lettek, próbáld újra.")
     c = cel_olvas(cid)
+    if str(idx) in c.get("leckek", {}):
+        return   # közben már elkészült egy másik példány: azt tartjuk meg
     c.setdefault("leckek", {})[str(idx)] = {"bevezeto": adat.get("bevezeto", ""), "abrak": abrak, "gyakorlatok": gy,
                                              "kartyak": [k for k in adat.get("kartyak", []) if k.get("elol") and k.get("hatul")][:8], "miniapp": miniapp,
                                              "kesz": False, "keszult": datetime.now().isoformat(timespec="seconds")}
@@ -1893,7 +1912,8 @@ class Kezelo(BaseHTTPRequestHandler):
                     lk["folyamat"] = {"i": max(0, min(int(adat.get("i", 0)), 80)), "helyes": max(0, min(int(adat.get("helyes", 0)), 60)),
                                       "osszes": max(0, min(int(adat.get("osszes", 0)), 60)), "kombo": max(0, min(int(adat.get("kombo", 0)), 60)),
                                       "max_kombo": max(0, min(int(adat.get("max_kombo", 0)), 60)), "bonusz": max(0, min(int(adat.get("bonusz", 0)), 40)),
-                                      "kr": kr, "esedekes": es, "mikor": datetime.now().isoformat(timespec="seconds")}
+                                      "kr": kr, "esedekes": es, "mikor": datetime.now().isoformat(timespec="seconds"),
+                                      "sorrend": [str(x)[:24] for x in (adat.get("sorrend") or [])[:80]], "hangulat": str(adat.get("hangulat") or "")[:10]}
                     ir(f"cel_{cid}.json", c)
                     return self.kuld({"ok": True})
                 if mit == "kesz":
