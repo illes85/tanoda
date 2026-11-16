@@ -10,6 +10,7 @@ Futtatás: tanoda.service (felhasználói systemd) → http://127.0.0.1:8090
 import difflib
 import hangcsomag
 import sakk
+import admin_dash
 import hashlib
 import hmac
 import socket
@@ -387,7 +388,7 @@ def claude_json(prompt: str, modell: str, effort: str = "low", eszkozok: str = "
 def naplo_koltseg(modell: str, usd) -> None:
     try:
         with (ADAT / "koltseg.jsonl").open("a", encoding="utf-8") as f:
-            f.write(json.dumps({"ido": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "modell": modell, "usd": usd}) + "\n")
+            f.write(json.dumps({"ido": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "modell": modell, "usd": usd, "user": getattr(_T, "slug", "") or "", "munka": getattr(_T, "munka", "") or "egyeb"}) + "\n")
     except OSError:
         pass
 
@@ -1279,7 +1280,11 @@ def lecke_keszit(cid: str, idx: int) -> None:
         elvetett += nyers - len(gy)
         if len(gy) >= 3 and LEKTOR:
             try:
-                gy, jav, hibak = lecke_lektor(c, l, adat, gy, en)
+                _T.munka = "lecke_lektor"
+                try:
+                    gy, jav, hibak = lecke_lektor(c, l, adat, gy, en)
+                finally:
+                    _T.munka = "lecke"
                 lektor_hibak += hibak
                 if jav:
                     adat = jav
@@ -1393,6 +1398,7 @@ def munka_indit(tipus: str, cid: str, fn, *args, suly: int = 1) -> str:
 
     def futtat():
         _T.slug = slug
+        _T.munka = tipus
         try:
             fn(cid, *args)
             MUNKAK[jid]["allapot"] = "kesz"
@@ -1492,6 +1498,24 @@ def kartya_id(elol: str) -> str:
     return hashlib.sha1(elol.strip().lower().encode()).hexdigest()[:10]
 
 
+GY_STAT_ZAR = threading.Lock()
+
+
+def gy_stat_frissit(cid: str, idx: int, er) -> None:
+    """Feladatonkénti találati arány (admin-finomhangoláshoz): kulcs user|cél|lecke|gyakorlat → {t: típus, n: válaszok, j: helyesek}."""
+    try:
+        with GY_STAT_ZAR:
+            st = olvas_g("gy_stat.json", {})
+            for e in (er or [])[:80]:
+                gi, t, jo = int(e[0]), str(e[1])[:12], bool(e[2])
+                v = st.setdefault(f"{aktualis()}|{cid}|{idx}|{gi}", {"t": t, "n": 0, "j": 0})
+                v["n"] += 1
+                v["j"] += int(jo)
+            ir_g("gy_stat.json", st)
+    except (ValueError, TypeError, IndexError):
+        pass
+
+
 def lecke_kesz(cid: str, idx: int, adat: dict) -> dict:
     c = cel_olvas(cid)
     lk = c.get("leckek", {}).get(str(idx))
@@ -1527,6 +1551,7 @@ def lecke_kesz(cid: str, idx: int, adat: dict) -> dict:
     xp += len(adat.get("kartya_eredmeny") or {}) * 3
     lk.pop("folyamat", None)
     if elso:
+        gy_stat_frissit(cid, idx, adat.get("er"))
         lk["kesz"] = True
         lk["kesz_nap"] = mai.isoformat()
         lk["eredmeny"] = {"helyes": helyes, "osszes": ossz}
@@ -1642,7 +1667,17 @@ class Kezelo(BaseHTTPRequestHandler):
                 if not hmac.compare_digest(k, admin_token()):
                     return self.kuld(b"tiltott", 403, "text/plain; charset=utf-8")
                 mind = parse_qs(u.query).get("mind", [""])[0] == "1"
-                oldal = admin_vissza_oldal(mind) if parse_qs(u.query).get("oldal", [""])[0] == "vissza" else admin_oldal(mind)
+                of = parse_qs(u.query).get("oldal", ["attekintes"])[0]
+                if of == "vissza":
+                    oldal = admin_vissza_oldal(mind)
+                elif of == "jelzes":
+                    oldal = admin_oldal(mind)
+                else:
+                    try:
+                        ora = int(parse_qs(u.query).get("ora", ["24"])[0])
+                    except ValueError:
+                        ora = 24
+                    oldal = admin_dash.oldal(of, admin_adatok(max(1, min(ora, 168))), admin_token(), max(1, min(ora, 168)))
                 return self.kuld(oldal.encode(), tipus="text/html; charset=utf-8")
             if u.path == "/api/profilok":
                 return self.kuld({"profilok": felh_lista(), "max": 12})
@@ -1927,6 +1962,98 @@ class Kezelo(BaseHTTPRequestHandler):
         self.kuld({"hiba": "nincs ilyen"}, 404)
 
 
+# ---------------------------------------------------------------------------------------------------- admin dashboard adatai
+def _jsonl(nev: str) -> list[dict]:
+    ki = []
+    try:
+        for sor in (ADAT / nev).read_text(encoding="utf-8").splitlines():
+            try:
+                ki.append(json.loads(sor))
+            except ValueError:
+                pass
+    except OSError:
+        pass
+    return ki
+
+
+def admin_adatok(ora: int = 24) -> dict:
+    """Minden, amit az admin-dashboard megjelenít (csak olvas, AI-hívás nélkül)."""
+    ma_s, het = ma().isoformat(), (ma() - timedelta(days=6)).isoformat()
+    kolt = _jsonl("koltseg.jsonl")
+    kk = {"ossz_usd": 0.0, "ma_usd": 0.0, "het_usd": 0.0, "hivas": len(kolt), "user": {}, "munka": {}}
+    napi: dict[str, float] = {}
+    for r in kolt:
+        u = float(r.get("usd") or 0)
+        nap = str(r.get("ido", ""))[:10]
+        kk["ossz_usd"] += u
+        kk["ma_usd"] += u if nap == ma_s else 0
+        kk["het_usd"] += u if nap >= het else 0
+        napi[nap] = napi.get(nap, 0) + u
+        if r.get("user"):
+            kk["user"][r["user"]] = kk["user"].get(r["user"], 0) + u
+        kk["munka"][r.get("munka") or "egyeb"] = kk["munka"].get(r.get("munka") or "egyeb", 0) + u
+    kk["napok"] = [((ma() - timedelta(days=i)).isoformat(), napi.get((ma() - timedelta(days=i)).isoformat(), 0.0)) for i in range(13, -1, -1)]
+    felh = []
+    gen_ossz = 0
+    for f in felh_lista():
+        with felhasznalo(f["az"]):
+            m = felh_meta(f["az"]) or {}
+            p = profil()
+            celok = [x for x in (felh_dir().glob("cel_*.json"))]
+            kesz = gen = 0
+            for cf in celok:
+                try:
+                    lk = json.loads(cf.read_text(encoding="utf-8")).get("leckek", {})
+                except (OSError, ValueError):
+                    continue
+                gen += len(lk)
+                kesz += sum(1 for v in lk.values() if v.get("kesz"))
+            gen_ossz += gen
+            keret_p = (p.get("beallitasok") or {}).get("keret") or {}
+            felh.append({"az": f["az"], "nev": f["nev"], "emoji": f["emoji"], "vip": bool(m.get("vip")), "xp": p.get("xp", 0), "szint": szint_adat(p.get("xp", 0))["szint"],
+                         "sorozat": p.get("sorozat", 0), "utolso_nap": p.get("utolso_nap") or "", "celok": len(celok), "leckek_kesz": kesz, "leckek_gen": gen,
+                         "keret_ma": keret_p.get("db", 0) if keret_p.get("nap") == ma_s else 0, "napi_limit": m.get("napi") or felh_korlat()[1] if f["az"] != ADMIN_FELH else 0,
+                         "usd": kk["user"].get(f["az"], 0.0),
+                         "napi7": [((ma() - timedelta(days=i)).isoformat()[5:], (p.get("napi") or {}).get((ma() - timedelta(days=i)).isoformat(), {}).get("xp", 0)) for i in range(6, -1, -1)]})
+    lecke_usd = sum(v for n, v in kk["munka"].items() if n in ("lecke", "lecke_lektor"))
+    kk["lecke_becsles"] = not lecke_usd
+    kk["lecke_ar"] = (lecke_usd or kk["ossz_usd"]) / gen_ossz if gen_ossz else 0.0
+    # minőség
+    mq = _jsonl("minoseg.jsonl")
+    lekt = [x for x in mq if x.get("lektor")]
+    minoseg = {"n": len(mq), "elvetett_atlag": sum(x.get("elvetett", 0) for x in mq) / max(1, len(mq)), "lektor_db": len(lekt), "lektor_arany": 100 * len(lekt) / max(1, len(mq)),
+               "utolso_lektor": list(reversed(lekt[-8:]))}
+    # feladat-statisztika
+    st = olvas_g("gy_stat.json", {})
+    tip: dict[str, list[int]] = {}
+    gyanus = []
+    for kulcs, v in st.items():
+        tip.setdefault(v["t"], [0, 0])
+        tip[v["t"]][0] += v["n"]
+        tip[v["t"]][1] += v["j"]
+        if v["n"] >= 3 and v["j"] / v["n"] <= 0.35:
+            try:
+                az, cid, li, gi = kulcs.split("|")
+                with felhasznalo(az):
+                    c = cel_olvas(cid) or {}
+                    lk = c.get("leckek", {}).get(li, {})
+                    g = lk.get("gyakorlatok", [])[int(gi)]
+                    cim = c.get("cim", cid)
+                    lecke_cim = (leckek_lista(c)[int(li)]["cim"] if c.get("terv") else "")
+                gyanus.append({"user": az, "cim": cim, "lecke": lecke_cim, "t": v["t"], "kerdes": str(g.get("kerdes") or g.get("mondat") or g.get("szoveg") or "")[:110], "arany": 100 * v["j"] / v["n"], "n": v["n"]})
+            except (ValueError, IndexError, KeyError, TypeError):
+                continue
+    gyanus.sort(key=lambda x: (x["arany"], -x["n"]))
+    vj, jz = visszajelzesek(), jelzesek()
+    minta = admin_dash.minta_olvas(ADAT, ora)
+    m24 = admin_dash.minta_olvas(ADAT, 24)
+    return {"ma": ma_s, "het_eleje": het, "admin": ADMIN_FELH, "felh": felh, "kolt": kk, "minoseg": minoseg, "gy": {"tipusok": {k: tuple(v) for k, v in tip.items()}, "gyanus": gyanus[:20]},
+            "tanulsag": len(olvas_g("tanulsagok.json", [])), "vissza": {"nyitott": sum(1 for x in vj if x["allapot"] in ("uj", "folyamatban")), "ossz": len(vj)},
+            "jelzes": {"nyitott": sum(1 for x in jz if x["allapot"] == "uj"), "ossz": len(jz)}, "minta": minta, "magok": os.cpu_count() or 1,
+            "rendszer": {"van": bool(m24), "cpu_atlag": sum(r["cpu"] for r in m24) / max(1, len(m24)), "cpu_csucs": max([r["cpu"] for r in m24] or [0]),
+                         "mem_csucs": max([r["mem"] for r in m24] or [0]), "temp_csucs": max([r["temp"] for r in m24 if r.get("temp") is not None] or [0])}}
+
+
 # ---------------------------------------------------------------------------------------------------- napi emlékeztető
 def ntfy_kuld(szoveg: str) -> str | None:
     """Emlékeztető a telefonra (ntfy). TANODA_NTFY_SZARAZ=1: csak naplózza (teszthez)."""
@@ -1999,7 +2126,7 @@ def admin_oldal(mind: bool) -> str:
 <style>body{{font:15px system-ui;max-width:760px;margin:0 auto;padding:12px;background:#f2f8f4;color:#14281d}}.k{{background:#fff;border:1px solid #c5d9cc;border-radius:12px;padding:12px;margin:10px 0}}
 .k.elfogadva{{border-color:#22b85c}}.k.elutasitva{{border-color:#e0443e}}.b{{float:right;background:#e6f1ea;border-radius:8px;padding:1px 8px}}mark{{background:#fff3b0}}p{{margin:.35em 0}}
 button{{padding:8px 14px;border-radius:9px;border:0;background:#22b85c;color:#fff;font-weight:700;margin:4px 6px 0 0}}button+button{{background:#e0443e}}input{{width:100%;padding:8px;margin-top:6px;box-sizing:border-box}}</style>
-<h2>🚩 Tanoda – kivizsgálandó jelzések</h2><p><b>🚩 Jelzések</b> · <a href="?k={e(admin_token())}&oldal=vissza">💬 Visszajelzések ({sum(1 for x in visszajelzesek() if x["allapot"] == "uj")} új)</a> · <a href="?k={e(admin_token())}">Csak az újak</a> · <a href="?k={e(admin_token())}&mind=1">Mind</a> · {len(lista)} tétel</p>{"".join(kartyak) or "<p>Nincs tétel. 🎉</p>"}
+<h2>🚩 Tanoda – kivizsgálandó jelzések</h2><p><a href="?k={e(admin_token())}">📊 Dashboard</a> · <b>🚩 Jelzések</b> · <a href="?k={e(admin_token())}&oldal=vissza">💬 Visszajelzések ({sum(1 for x in visszajelzesek() if x["allapot"] == "uj")} új)</a> · <a href="?k={e(admin_token())}&oldal=jelzes">Csak az újak</a> · <a href="?k={e(admin_token())}&oldal=jelzes&mind=1">Mind</a> · {len(lista)} tétel</p>{"".join(kartyak) or "<p>Nincs tétel. 🎉</p>"}
 <script>const K=new URLSearchParams(location.search).get("k");async function d(id,x){{const r=await fetch("/api/admin/dontes",{{method:"POST",headers:{{"Content-Type":"application/json","X-Admin":K}},body:JSON.stringify({{id,dontes:x,megjegyzes:(document.getElementById("m"+id)||{{}}).value||""}})}});if(r.ok)location.reload();else alert("Hiba")}}</script>'''
 
 
@@ -2020,13 +2147,14 @@ def admin_vissza_oldal(mind: bool) -> str:
 <style>body{{font:15px system-ui;max-width:760px;margin:0 auto;padding:12px;background:#f2f8f4;color:#14281d}}.k{{background:#fff;border:1px solid #c5d9cc;border-radius:12px;padding:12px;margin:10px 0}}
 .k.kesz{{border-color:#22b85c}}.k.elvetve{{border-color:#999;opacity:.75}}.k.folyamatban{{border-color:#f5b400}}.b{{float:right;background:#e6f1ea;border-radius:8px;padding:1px 8px}}p{{margin:.35em 0}}
 button{{padding:8px 12px;border-radius:9px;border:0;color:#fff;font-weight:700;margin:4px 6px 0 0;background:#888}}button.g{{background:#22b85c}}button.r{{background:#e0443e}}button.f{{background:#d99a00}}input{{width:100%;padding:8px;margin-top:6px;box-sizing:border-box}}</style>
-<h2>💬 Tanoda – visszajelzések</h2><p><a href="?k={tok}">🚩 Jelzések</a> · <b>💬 Visszajelzések</b> · <a href="?k={tok}&oldal=vissza">Aktív</a> · <a href="?k={tok}&oldal=vissza&mind=1">Mind</a> · {len(lista)} tétel</p>{"".join(kartyak) or "<p>Nincs tétel. 🎉</p>"}
+<h2>💬 Tanoda – visszajelzések</h2><p><a href="?k={tok}">📊 Dashboard</a> · <a href="?k={tok}&oldal=jelzes">🚩 Jelzések</a> · <b>💬 Visszajelzések</b> · <a href="?k={tok}&oldal=vissza">Aktív</a> · <a href="?k={tok}&oldal=vissza&mind=1">Mind</a> · {len(lista)} tétel</p>{"".join(kartyak) or "<p>Nincs tétel. 🎉</p>"}
 <script>const K=new URLSearchParams(location.search).get("k");async function d(id,x){{const r=await fetch("/api/admin/visszajelzes",{{method:"POST",headers:{{"Content-Type":"application/json","X-Admin":K}},body:JSON.stringify({{id,allapot:x,megjegyzes:(document.getElementById("m"+id)||{{}}).value||""}})}});if(r.ok)location.reload();else alert("Hiba")}}</script>'''
 
 
 def main() -> None:
     migral()
     threading.Thread(target=emlekezteto_figyelo, daemon=True).start()
+    admin_dash.mintavetel_indit(ADAT)
     srv = ThreadingHTTPServer((BIND, PORT), Kezelo)
     print(f"Tanoda fut: http://{BIND}:{PORT} (házi hálózat: {lan_url()})", flush=True)
     srv.serve_forever()

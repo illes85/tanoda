@@ -561,7 +561,7 @@ function lepes(){const it=L.items[L.i];setTimeout(()=>{hangElore(L.items[L.i+1])
   ({intro,felidez,teszt,ird,parosit,rendez,hallgat,mondd,tabla,igazhamis,kitolt,hibakereso})[it.t](it);
   if(it.t==="intro"&&L.i===0)csiraA(L.hangulat==="faradt"?"nyujtozik":L.hangulat==="lendulet"?"edz":"integet",1900);else if(["ird","mondd","tabla","hibakereso"].includes(it.t)&&Math.random()<.6)kabala("nehez")}
 const tov=(felirat="Tovább")=>{$("#ll").innerHTML=`<button class="gomb" id="tb">${felirat}</button>`;$("#tb").onclick=()=>{adaptiv();L.i++;lepes()}};
-function pont(jo,el){L.osszes++;
+function pont(jo,el){L.osszes++;const _it=L.items[L.i];if(_it&&_it.gi!==undefined)(L.er=L.er||[]).push([_it.gi,_it.t,jo?1:0]);
   if(jo){L.helyes++;L.kombo++;L.max_kombo=Math.max(L.max_kombo,L.kombo);
     if(L.kombo>=3){L.bonusz+=Math.min(6,(L.kombo-2)*2);const k=document.createElement("div");k.className="kombo";k.textContent="🔥 ×"+L.kombo;document.body.appendChild(k);setTimeout(()=>k.remove(),900);sfx.kombo(L.kombo)}
     L.rosszSor=0;joHang();rez(30);kabala(L.kombo>=8?"sorozat8":L.kombo>=5?"sorozat5":L.kombo>=3?"sorozat3":"helyes");szikraEl(el||$(".csira"),L.kombo>=3?14:8);buborek(L.kombo>=3?veletlen(["Tüzes vagy! 🔥","Ez egy sorozat!","Megállíthatatlan!"]):veletlen(["Szép volt!","Pontosan!","Ügyes vagy!","Igen! 🎉"]))}
@@ -757,7 +757,7 @@ function mondd(it){let rec=null,sz=[],ido=null,foglalt=false;
       visszajelzes(jo,it,`${Math.round(r.pontos*100)}% egyezés<div style="margin-top:6px">${szavak}</div><div class="halvany" style="margin-top:6px">Ezt értettem: „${esc(r.hallott)}”<br>(A gép leírása a kiejtésed közelítése, nem tökéletes mérés.)</div>`)};
     csiraA("figyel");rec.start();$("#mikro").classList.add("rec");$("#mikro").textContent="⏹";mst("🔴 Felvétel megy… koppints a leállításhoz.");ido=setTimeout(()=>{if(rec.state==="recording")rec.stop()},10000)}}
 async function vege(){Felolv.stop();const d=$("#lj");d.innerHTML=`<div class="test kozep" style="padding-top:80px">${CSIRA("nagy2","gondol")}<p>Mentem…</p></div>`;
-  const r=await api("/api/cel/"+L.id+"/kesz",{lecke:L.idx,helyes:L.helyes,osszes:Math.max(1,L.osszes),kombo_bonusz:L.bonusz,kartya_eredmeny:L.kr});
+  const r=await api("/api/cel/"+L.id+"/kesz",{lecke:L.idx,helyes:L.helyes,osszes:Math.max(1,L.osszes),kombo_bonusz:L.bonusz,kartya_eredmeny:L.kr,er:L.er||[]});
   if(r.hiba){d.innerHTML=`<div class="test kozep"><p>${esc(r.hiba)}</p><button class="gomb" onclick="$('#lj').remove();fo()">Vissza</button></div>`;return}
   const pr=Math.round(L.helyes/Math.max(1,L.osszes)*100);const csillag=pr===100?"🌟🌟🌟":pr>=70?"⭐⭐":"⭐";
   d.innerHTML=`<div class="test kozep be-anim" style="padding-top:30px">${CSIRA("nagy2",pr>=50?"orul":"szomoru")}<h2>Lecke kész! ${csillag}</h2>
